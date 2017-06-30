@@ -1,5 +1,6 @@
-PATH
-  remote: ../ruby-vobject
+GIT
+  remote: git://github.com/riboseinc/ruby-vobject.git
+  revision: 822b03260465ffbb3fa843c86518e987eb46b5c3
   specs:
     ruby-vobject (0.1.0)
 
