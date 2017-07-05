@@ -1,13 +1,13 @@
 require 'spec_helper'
 
 def create_vcard_object
-  Indigo::Vcard.new({
+  Vcard.new({
     :name => {
       :family => "Vcard",
-      :given  => "Indigo"
+      :given  => "Testing"
     },
     :fullname => {
-      :value => "Indigo Vcard"
+      :value => "Testing Vcard"
     }
   })
 end
@@ -28,20 +28,20 @@ end
 
 def test_encode_vcard(vcard, version)
   vcard_str = vcard.encode(version)
-  decoded_vcard = Indigo::Vcard.decode(vcard_str, version)
+  decoded_vcard = Vcard.decode(vcard_str, version)
 
   decoded_vcard.name.family.should == ["Vcard"]
-  decoded_vcard.name.given.should == ["Indigo"]
-  decoded_vcard.fullname.value.should == "Indigo Vcard"
+  decoded_vcard.name.given.should == ["Testing"]
+  decoded_vcard.fullname.value.should == "Testing Vcard"
 end
 
 def test_decode_vcard(vcard_str, version=nil)
-  vcard = Indigo::Vcard.decode(*([vcard_str, version].compact))
-  vcard.should be_an_instance_of(Indigo::Vcard)
+  vcard = Vcard.decode(*([vcard_str, version].compact))
+  vcard.should be_an_instance_of(Vcard)
 end
 
-include Indigo::Vcard::StructureHelper
-Indigo::Vcard::StructureHelper.define_structural_comparators do
+include Vcard::StructureHelper
+Vcard::StructureHelper.define_structural_comparators do
   {
     :eql        => ->(a, b) { a.should eql b },
     :include    => ->(a, b) { a.should include b },
@@ -52,7 +52,7 @@ Indigo::Vcard::StructureHelper.define_structural_comparators do
   }
 end
 
-describe Indigo::Vcard do
+describe Vcard do
 
   describe '.schema' do
     #
@@ -61,7 +61,7 @@ describe Indigo::Vcard do
       it 'should have a proper structure' do
         #
         should_have_structure(
-          Indigo::Vcard.schema(Indigo::Vcard::AttributeAdaptor::WebUI),
+          Vcard.schema(Vcard::AttributeAdaptor::WebUI),
           {
             email: {
               multi: NilOr[Bool],
@@ -118,7 +118,7 @@ describe Indigo::Vcard do
 
       it 'should have a proper structure' do
         #
-        should_have_structure Indigo::Vcard.schema, {
+        should_have_structure Vcard.schema, {
           :note => {
             :alt_id=>{},
             :group=>{},
@@ -280,7 +280,7 @@ describe Indigo::Vcard do
   describe '#serializable_hash' do
     #
     it 'should not serialize "blank" fields' do
-      vcard = Indigo::Vcard.new({
+      vcard = Vcard.new({
         :impp => {
           :scheme => 'pqrst',
         },
@@ -303,13 +303,13 @@ describe Indigo::Vcard do
     end
 
     it 'should return values in the form of Arrays for all fields' do
-      vcard = Indigo::Vcard.new({
+      vcard = Vcard.new({
         :name => {
           :family => "Vcard",
-          :given  => "Indigo"
+          :given  => "Testing"
         },
         :fullname => {
-          :value => "Indigo Vcard"
+          :value => "Testing Vcard"
         },
         :impp => {
           :value => 'abcxyz',
@@ -354,17 +354,17 @@ describe Indigo::Vcard do
         vcard_str = <<-eos
 BEGIN:VCARD
 VERSION:4.0
-FN:Indigo Vcard
+FN:Testing Vcard
 END:VCARD
 eos
-        vcard = Indigo::Vcard.decode(vcard_str)
+        vcard = Vcard.decode(vcard_str)
 
         encoded = vcard.encode(@version)
-        decoded_vcard = Indigo::Vcard.decode(encoded)
+        decoded_vcard = Vcard.decode(encoded)
 
-        decoded_vcard.name.given.should == ["Indigo"]
+        decoded_vcard.name.given.should == ["Testing"]
         decoded_vcard.name.family.should == ["Vcard"]
-        decoded_vcard.fullname.value.should == "Indigo Vcard"
+        decoded_vcard.fullname.value.should == "Testing Vcard"
       end
 
     end
@@ -396,8 +396,8 @@ eos
         vcard_str = <<-eos
 BEGIN:VCARD
 VERSION:3.0
-N:Vcard;Indigo;;
-FN:Indigo Vcard
+N:Vcard;Testing;;
+FN:Testing Vcard
 PHOTO;ENCODING=b;TYPE=JPEG:/9j/4AAQSkZJRgABAQAAAQABAAD/4gxYSUNDX1BST0ZJTEUA\r
  AQEAAAxITGlubwIQAABtbnRyUkdCIFhZWiAHzgACAAkABgAxAABhY3NwTVNGVAAAAABJRUMgc1\r
  JHQgAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLUhQICAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r
@@ -419,7 +419,7 @@ eos
         vcard_str = <<-eos
 BEGIN:VCARD
 VERSION:4.0
-FN:Indigo Vcard
+FN:Testing Vcard
 END:VCARD
 eos
         test_decode_vcard(vcard_str, @version)
@@ -431,8 +431,8 @@ eos
       vcard_str = <<-eos
 BEGIN:VCARD
 VERSION:3.0
-N:Vcard;Indigo;;
-FN:Indigo Vcard
+N:Vcard;Testing;;
+FN:Testing Vcard
 END:VCARD
 eos
       test_decode_vcard(vcard_str)
@@ -442,7 +442,7 @@ eos
       vcard_str = <<-eos
 BEGIN:VCARD
 VERSION:4.0
-FN:Indigo Vcard
+FN:Testing Vcard
 END:VCARD
 eos
       test_decode_vcard(vcard_str)
@@ -455,7 +455,7 @@ eos
       end
 
       before :each do
-        @vcard = Indigo::Vcard.decode @vcard_str
+        @vcard = Vcard.decode @vcard_str
       end
 
       it 'is a vcard' do
@@ -463,7 +463,7 @@ eos
       end
 
       it 'contains the expected number of fields' do
-        invis = ::Indigo::Vcard::Field::INVISIBLE
+        invis = ::Vcard::Field::INVISIBLE
         @vcard.emails(invis)     .length.should == 1
         @vcard.telephones(invis) .length.should == 2
         @vcard.addresses(invis)  .length.should == 1
@@ -478,7 +478,7 @@ eos
       end
 
       before :each do
-        @vcard = Indigo::Vcard.decode @vcard_str
+        @vcard = Vcard.decode @vcard_str
       end
 
       it 'is a vcard' do
@@ -486,7 +486,7 @@ eos
       end
 
       it 'contains the expected number of fields' do
-        invis = ::Indigo::Vcard::Field::INVISIBLE
+        invis = ::Vcard::Field::INVISIBLE
         @vcard.emails(invis)     .length.should == 3
         @vcard.urls(invis)       .length.should == 4
         @vcard.impps(invis)      .length.should == 9
@@ -507,26 +507,26 @@ eos
 
     it "should obtain a field object by field name" do
       @vcard.name.family.should == "Vcard"
-      @vcard.name.given.should == "Indigo"
-      @vcard.fullname.value.should == "Indigo Vcard"
+      @vcard.name.given.should == "Testing"
+      @vcard.fullname.value.should == "Testing Vcard"
     end
 
     it "should add a field to the vcard for <<" do
-      field = Indigo::Vcard::Field::Birthday.new(
+      field = Vcard::Field::Birthday.new(
         :year  => 1970,
         :month => 1,
         :day   => 1
       )
       @vcard << field
 
-      @vcard.birthday('invisible').should be_an_instance_of(Indigo::Vcard::Field::Birthday)
+      @vcard.birthday('invisible').should be_an_instance_of(Vcard::Field::Birthday)
     end
 
     it "should add 2 fields to the vcard for <<" do
-      field1 = Indigo::Vcard::Field::Note.new(
+      field1 = Vcard::Field::Note.new(
         :value => 'This is note 1.'
       )
-      field2 = Indigo::Vcard::Field::Note.new(
+      field2 = Vcard::Field::Note.new(
         :value => 'This is note 2.'
       )
       @vcard << field1 << field2
@@ -535,20 +535,20 @@ eos
       @vcard.notes('invisible').length.should == 2
 
       @vcard.notes('invisible').each do |note|
-        note.should be_an_instance_of(Indigo::Vcard::Field::Note)
+        note.should be_an_instance_of(Vcard::Field::Note)
       end
     end
 
     it "should raise exception when try to add non field object to vcard for <<" do
       expect {
         @vcard << {}
-      }.to raise_error(Indigo::Vcard::VcardException)
+      }.to raise_error(Vcard::VcardException)
     end
 
     it "should not append non meaningful field to vcard" do
       length_before = count_vcard(@vcard)
 
-      version = Indigo::Vcard::Field::Version.new
+      version = Vcard::Field::Version.new
       @vcard << version
 
       length_after = count_vcard(@vcard)
@@ -564,7 +564,7 @@ eos
       }
 
       @vcard.birthday = hash
-      @vcard.birthday('invisible').should be_an_instance_of(Indigo::Vcard::Field::Birthday)
+      @vcard.birthday('invisible').should be_an_instance_of(Vcard::Field::Birthday)
     end
 
     it "should add 2 fields to the vcard for = by an array" do
@@ -578,14 +578,14 @@ eos
       @vcard.notes('invisible').length.should == 2
 
       @vcard.notes('invisible').each do |note|
-        note.should be_an_instance_of(Indigo::Vcard::Field::Note)
+        note.should be_an_instance_of(Vcard::Field::Note)
       end
     end
 
     it "should replace the original field" do
       @vcard.fullname = { :value => 'Vcard Gem' }
 
-      @vcard.fullname.should be_an_instance_of(Indigo::Vcard::Field::Fullname)
+      @vcard.fullname.should be_an_instance_of(Vcard::Field::Fullname)
       @vcard.fullname.value.should == 'Vcard Gem'
     end
 
@@ -593,7 +593,7 @@ eos
       hash  = { :value => 'This is the original note.' }
 
       @vcard.note = hash
-      @vcard.note('invisible').should be_an_instance_of(Indigo::Vcard::Field::Note)
+      @vcard.note('invisible').should be_an_instance_of(Vcard::Field::Note)
 
       ary = [
         { :value => 'This is note 1.' },
@@ -605,7 +605,7 @@ eos
       @vcard.notes('invisible').length.should == 2
 
       @vcard.notes('invisible').each do |note|
-        note.should be_an_instance_of(Indigo::Vcard::Field::Note)
+        note.should be_an_instance_of(Vcard::Field::Note)
       end
     end
 
@@ -623,7 +623,7 @@ eos
       @vcard.title = title
 
       group = @vcard['career']
-      group.should be_an_instance_of(Indigo::Vcard::Group)
+      group.should be_an_instance_of(Vcard::Group)
       group.name.should == 'career'
 
       fields = []
@@ -633,8 +633,8 @@ eos
 
       fields.length.should == 2
       fields.map(&:class).should include(
-        Indigo::Vcard::Field::Organization,
-        Indigo::Vcard::Field::Title
+        Vcard::Field::Organization,
+        Vcard::Field::Title
       )
     end
 
@@ -643,7 +643,7 @@ eos
 
       @vcard.each do |field|
         length += 1
-        field.should be_a_kind_of(Indigo::Vcard::Field)
+        field.should be_a_kind_of(Vcard::Field)
       end
 
       length.should == 2
@@ -660,13 +660,13 @@ eos
       @vcard.notes.should be_an_instance_of(Array)
 
       @vcard.delete_if do |field|
-        field.is_a?(Indigo::Vcard::Field::Note)
+        field.is_a?(Vcard::Field::Note)
       end
 
       @vcard.notes.should be_empty
 
-      @vcard.name.should be_an_instance_of(Indigo::Vcard::Field::Name)
-      @vcard.fullname.should be_an_instance_of(Indigo::Vcard::Field::Fullname)
+      @vcard.name.should be_an_instance_of(Vcard::Field::Name)
+      @vcard.fullname.should be_an_instance_of(Vcard::Field::Fullname)
     end
 
   end

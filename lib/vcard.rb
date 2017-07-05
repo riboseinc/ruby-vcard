@@ -1,3 +1,4 @@
+require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
 
