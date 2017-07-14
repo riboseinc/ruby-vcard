@@ -1,4 +1,4 @@
-require "vobject/property"
+require "vcard/v4_0/property"
 
 module Vcard::V4_0
 
