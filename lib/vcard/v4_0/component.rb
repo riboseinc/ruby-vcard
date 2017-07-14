@@ -1,10 +1,19 @@
+require "vobject/component"
 require "vcard/v4_0/property"
+require "pp"
 
 module Vcard::V4_0
 
 class Component < Vobject::Component
 
   class << self
+
+    def parse(vcf)
+          hash = Vcard.parse(vcf)
+          comp_name = hash.keys.first
+          self.new comp_name, hash[comp_name]
+    end
+
 
     private
 
@@ -22,6 +31,10 @@ class Component < Vobject::Component
 
   def component_base_class
     version_class.const_get(:Component)
+  end
+
+  def parameter_base_class
+    version_class.const_get(:Parameter)
   end
 
   def version_class
