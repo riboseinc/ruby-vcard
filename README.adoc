@@ -14,6 +14,136 @@ gem 'vcard'
 
 == Usage
 
+vCard example:
+```
+BEGIN:VCARD
+VERSION:4.0
+UID:urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1
+FN:J. Doe
+N:Doe;J.;;;
+EMAIL;PID=1.1:jdoe@ex
+        ample.com
+EMAIL;PID=2.1:boss@example.com
+EMAIL;PID=2.2:ceo@example.com
+TEL;PID=1.1;VALUE=uri:tel:+1-555-555-5555
+TEL;PID=2.1,2.2;VALUE=uri:tel:+1-666-666-6666
+CLIENTPIDMAP:1;urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556
+CLIENTPIDMAP:2;urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee
+END:VCARD
+```
+
+converts to:
+
+```
+#<Vcard::V4_0::Component:0x007fc3c49dade8
+ @children=
+  [#<Vcard::V4_0::Property:0x007fc3c49d9df8
+    @group=nil,
+    @prop_name=:VERSION,
+    @value="4.0">,
+   #<Vcard::V4_0::Property:0x007fc3c49d8f70
+    @group=nil,
+    @prop_name=:UID,
+    @value="urn:uuid:4fbe8971-0bc3-424c-9c26-36c3e1eff6b1">,
+   #<Vcard::V4_0::Property:0x007fc3c49d8390
+    @group=nil,
+    @prop_name=:FN,
+    @value="J. Doe">,
+   #<Vcard::V4_0::Property:0x007fc3c49db180
+    @group=nil,
+    @prop_name=:N,
+    @value=
+     {:surname=>"Doe",
+      :givenname=>"J.",
+      :additionalname=>"",
+      :honprefix=>"",
+      :honsuffix=>""}>,
+   #<Vcard::V4_0::Property:0x007fc3c49d31d8
+    @multiple=
+     [#<Vobject::Property:0x007fc3c49d3138
+       @group=nil,
+       @params=
+        [#<Vobject::Parameter:0x007fc3c49d2f58
+          @multiple=
+           [#<Vobject::Parameter:0x007fc3c49d2d00
+             @param_name=:PID,
+             @value="1.1">],
+          @param_name=:PID>],
+       @prop_name=:EMAIL,
+       @value="jdoe@example.com">,
+      #<Vobject::Property:0x007fc3c49d2a58
+       @group=nil,
+       @params=
+        [#<Vobject::Parameter:0x007fc3c49d2800
+          @multiple=
+           [#<Vobject::Parameter:0x007fc3c49d2580
+             @param_name=:PID,
+             @value="2.1">],
+          @param_name=:PID>],
+       @prop_name=:EMAIL,
+       @value="boss@example.com">,
+      #<Vobject::Property:0x007fc3c49d2170
+       @group=nil,
+       @params=
+        [#<Vobject::Parameter:0x007fc3c49d2030
+          @multiple=
+           [#<Vobject::Parameter:0x007fc3c49d1f18
+             @param_name=:PID,
+             @value="2.2">],
+          @param_name=:PID>],
+       @prop_name=:EMAIL,
+       @value="ceo@example.com">],
+    @prop_name=:EMAIL>,
+   #<Vcard::V4_0::Property:0x007fc3c49d14c8
+    @multiple=
+     [#<Vobject::Property:0x007fc3c49d13b0
+       @group=nil,
+       @params=
+        [#<Vobject::Parameter:0x007fc3c49d1298
+          @multiple=
+           [#<Vobject::Parameter:0x007fc3c49d1108
+             @param_name=:PID,
+             @value="1.1">],
+          @param_name=:PID>,
+         #<Vobject::Parameter:0x007fc3c49d1068
+          @param_name=:VALUE,
+          @value="uri">],
+       @prop_name=:TEL,
+       @value="tel:+1-555-555-5555">,
+      #<Vobject::Property:0x007fc3c49d0b40
+       @group=nil,
+       @params=
+        [#<Vobject::Parameter:0x007fc3c49d09d8
+          @multiple=
+           [#<Vobject::Parameter:0x007fc3c49d0870
+             @param_name=:PID,
+             @value="2.1">,
+            #<Vobject::Parameter:0x007fc3c49d07d0
+             @param_name=:PID,
+             @value="2.2">],
+          @param_name=:PID>,
+         #<Vobject::Parameter:0x007fc3c49d0708
+          @param_name=:VALUE,
+          @value="uri">],
+       @prop_name=:TEL,
+       @value="tel:+1-666-666-6666">],
+    @prop_name=:TEL>,
+   #<Vcard::V4_0::Property:0x007fc3c49d25a8
+    @multiple=
+     [#<Vobject::Property:0x007fc3c49d2c38
+       @group=nil,
+       @prop_name=:CLIENTPIDMAP,
+       @value=
+        {:pid=>"1", :uri=>"urn:uuid:53e374d9-337e-4727-8803-a1e9c14e0556"}>,
+      #<Vobject::Property:0x007fc3c49d3980
+       @group=nil,
+       @prop_name=:CLIENTPIDMAP,
+       @value=
+        {:pid=>"2", :uri=>"urn:uuid:1f762d2b-03c4-4a83-9a03-75ff658a6eee"}>],
+    @prop_name=:CLIENTPIDMAP>],
+ @comp_name=:VCARD>
+```
+
 
 == Development
 
