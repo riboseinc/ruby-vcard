@@ -2,8 +2,11 @@ require "rsec"
 require "set"
 require "uri"
 require "date"
-require "tzinfo"
+#require "tzinfo"
 include Rsec::Helpers
+require 'vcard/version'
+require 'vobject'
+require 'vobject/component'
 
 module Vcard
 
