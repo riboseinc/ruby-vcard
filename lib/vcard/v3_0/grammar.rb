@@ -8,7 +8,7 @@ require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
 
-module Vcard
+module Vcard::V3_0
 	class Grammar
 
  class << self
@@ -248,4 +248,5 @@ private
    end
 
   end
+end
 end

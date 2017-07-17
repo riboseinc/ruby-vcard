@@ -8,7 +8,7 @@ require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
 
-module Vcard
+module Vcard::V4_0
 	class Grammar
 
  class << self
@@ -84,7 +84,8 @@ module Vcard
     typeparamtel1list = typeparamtel1.map {|t| [t] } | seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
 	    			[a, b].flatten
 			}
-     geourlvalue = seq('"'.r >> uri << '"'.r) {|s|
+    text        = /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
+    geourlvalue = seq('"'.r >> text << '"'.r) {|s|
 	                 	parse_err("geo value not a URI") unless s =~ URI::regexp 
 				s
     			}
@@ -182,7 +183,7 @@ module Vcard
 		      value, /[\r\n]/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
-			hash[key][:value] = typematch(key, params[0], :GENERIC, value)
+			hash[key][:value] = Vcard::V4_0::Typegrammars.typematch(key, params[0], :GENERIC, value)
 			hash[key][:group] = group[0]  unless group.empty?
 			hash[key][:params] = params[0] unless params.empty?
 			# TODO restrictions on params
@@ -212,7 +213,7 @@ module Vcard
 	calprop     = seq(calpropname, ':', value, 	/[\r\n]/) {|key, _, value, _|
 	    		key = key.upcase.gsub(/-/,"_").to_sym
 	    		hash = { key => {} }
-			hash[key][:value] = typematch(key, nil, :VCARD, value)
+			hash[key][:value] = Vcard::V4_0::Typegrammars.typematch(key, nil, :VCARD, value)
 			hash
 	}
     vobject 	= seq(/BEGIN:VCARD[\r\n]/i.r, calprop, props, /END:VCARD[\r\n]/i.r) { |(b, v, rest, e)|
@@ -248,4 +249,5 @@ private
    end
 
   end
+end
 end

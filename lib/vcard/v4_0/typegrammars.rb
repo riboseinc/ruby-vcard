@@ -7,7 +7,7 @@ include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
 
-module Vcard
+module Vcard::V4_0
 	class Typegrammars
 
  class << self
@@ -427,4 +427,5 @@ private
    end
 
   end
+end
 end

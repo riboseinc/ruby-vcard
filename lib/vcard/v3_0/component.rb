@@ -1,5 +1,6 @@
 require "vobject/component"
 require "vcard/v3_0/property"
+require "vcard/v3_0/grammar"
 require "pp"
 
 module Vcard::V3_0
@@ -9,7 +10,7 @@ class Component < Vobject::Component
   class << self
 
     def parse(vcf)
-          hash = Vcard.parse(vcf)
+          hash = Vcard::V3_0::Grammar.parse(vcf)
           comp_name = hash.keys.first
           self.new comp_name, hash[comp_name]
     end
