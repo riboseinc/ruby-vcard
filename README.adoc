@@ -1,9 +1,11 @@
 = Ruby vObject vCard gem
 
 This is a pure Ruby library for decoding and encoding vCards using the
-vObject structure.
+vObject structure. 
 
 == Installation
+
+Install the vObject gem.
 
 Add this line to your application's Gemfile:
 
