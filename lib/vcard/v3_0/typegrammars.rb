@@ -14,6 +14,35 @@ module Vcard::V3_0
 
   # property value types, each defining their own parser
 
+    def binary
+           binary  = seq(/[a-zA-Z0-9+\/]*/.r, /={0,2}/.r) {|b, q|
+                   ( (b.length + q.length) % 4 == 0 ) ? b + q : {:error => 'Malformed binary coding'}
+                   }
+            binary.eof
+    end
+
+  def phoneNumber 
+	  # This is on the lax side; there should be up to 15 digits
+	  phoneNumber = /[0-9() +-]+/.r
+	  phoneNumber.eof
+  end
+
+    def geovalue
+	        float           = prim(:double)
+		    # TODO confirm that Rsec can do signs!
+		geovalue    = seq(float, ';', float) {|a, _, b|
+		              ( a <= 180.0 and a >= -180.0 and b <= 180 and b > -180 ) ? {:lat => a, :long => b} :
+		                                       {:error => 'Latitude/Longitude outside of range -180..180'}
+		                                             }
+	                                                  geovalue.eof
+    end
+		
+
+  def classvalue  
+    classvalue 	= /PUBLIC/i.r | /PRIVATE/i.r | /CONFIDENTIAL/i.r | ianaToken | xname
+    classvalue.eof
+  end
+  
   def integer  
     integer 	= prim(:int32)
     integer.eof
@@ -30,8 +59,13 @@ module Vcard::V3_0
   end 
 
   def versionvalue
-     versionvalue = '4.0'.r 
+     versionvalue = '3.0'.r 
      versionvalue.eof
+  end
+
+  def profilevalue
+     profilevalue = /VCARD/i.r
+     profilevalue.eof
   end
 
   def uri
@@ -40,17 +74,6 @@ module Vcard::V3_0
 	                  	s
 			 }
 	uri.eof
-  end
-
-  def clientpidmap
-	uri         = /\S+/.r.map {|s|
-	                  	parse_err("invalid URI: #{s}") unless s =~ URI::regexp 
-				s
-			 }
-	clientpidmap = seq(/[0-9]/.r, ';', uri) {|a, _, b|
-		{:pid => a, :uri => b}
-	}
-	clientpidmap.eof
   end
 
   def text
@@ -80,21 +103,6 @@ module Vcard::V3_0
      date.eof
   end
 
-  def date_noreduc
-     date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		}
-     date_noreduc.eof
-  end
-
-  def date_complete
-     date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-		}
-     date_complete.eof
-  end
-
   def time	
     sign	    = /[+-]/i.r
     utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
@@ -109,30 +117,6 @@ module Vcard::V3_0
 	    	seq('-', minute, zone._?) |
 	    	seq('-', '-', second, zone._?) 
     time.eof
-  end
-
-  def time_notrunc
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
-    time_notrunc.eof
-  end
-
-  def time_complete
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_complete	= seq(hour, minute, second, zone._?) 
-    time_complete.eof
   end
 
   def date_time
@@ -155,61 +139,9 @@ module Vcard::V3_0
      date_time.eof
   end
 
-  def timestamp
-     date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-		}
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_complete	= seq(hour, minute, second, zone._?) 
-    timestamp 	= seq(date_complete, 'T', time_complete)
-    timestamp.eof
-  end
-
-  def date_and_or_time
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
-     date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		}
-     date_time	= seq(date_noreduc, 'T', time_notrunc) {
-	     	}
-     date	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-	     	} | /[0-9]{4}/.r {|yy|
-			#Time.utc(yy, 0, 0) 
-		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, mm|
-			#Time.utc(yy, mm, 0)
-		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		}
-    time	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) |
-	    	seq('-', minute, second, zone._?) |
-	    	seq('-', minute, zone._?) |
-	    	seq('-', '-', second, zone._?) 
-    date_and_or_time = date_time | date | seq("T", time)
-     date_and_or_time.eof
-  end
-  
   def utc_offset
     sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
+    utc_offset 	= seq(sign, /[0-9]{2}/.r, ':', /[0-9]{2}/.r)
     utc_offset.eof
   end
 
@@ -234,9 +166,26 @@ module Vcard::V3_0
 	    		c = c[0] if c.length == 1
 	    		d = d[0] if d.length == 1
 	    		e = e[0] if e.length == 1
-	    		{:surname => a, :givenname => b, :additionalname => c, 
-				:honprefix => d, :honsuffix => e}
-	    	}
+	    		{:surname => a, :givenname => b, :middlename => c, :honprefix => d, :honsuffix => e}
+	    	} | seq(component, ';', component, ';', component, ';', component) {|a, _, b, _, c, _, d|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		d = d[0] if d.length == 1
+	    		{:surname => a, :givenname => b, :middlename => c, :honprefix => d, :honsuffix => ''}
+	    	} | seq(component, ';', component, ';', component) {|a, _, b, _, c|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		{:surname => a, :givenname => b, :middlename => c, :honprefix => '', :honsuffix => ''}
+	    	} | seq(component, ';', component) {|a, _, b|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		{:surname => a, :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
+	    	} | component {|a|
+	    		a = a[0] if a.length == 1
+	    		{:surname => '', :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
+	    	} 
     fivepartname.eof
   end
 
@@ -257,67 +206,51 @@ module Vcard::V3_0
 	    		g = g[0] if g.length == 1
 	    		{:pobox => a, :ext => b, :street => c, 
 				:locality => d, :region => e, :code => f, :country => g}
-	    	}
+	    	} | seq(component, ';', component, ';', component, ';', component, ';', 
+		       component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		d = d[0] if d.length == 1
+	    		e = e[0] if e.length == 1
+	    		f = f[0] if f.length == 1
+	    		{:pobox => a, :ext => b, :street => c, 
+				:locality => d, :region => e, :code => f, :country => ''}
+	    	} | seq(component, ';', component, ';', component, ';', component, ';', 
+		       component) {|a, _, b, _, c, _, d, _, e|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		d = d[0] if d.length == 1
+	    		e = e[0] if e.length == 1
+	    		{:pobox => a, :ext => b, :street => c, 
+				:locality => d, :region => e, :code => '', :country => ''}
+	    	} | seq(component, ';', component, ';', component, ';', component) {|a, _, b, _, c, _, d|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		d = d[0] if d.length == 1
+	    		{:pobox => a, :ext => b, :street => c, 
+				:locality => d, :region => '', :code => '', :country => ''}
+	    	} | seq(component, ';', component, ';', component) {|a, _, b, _, c|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		c = c[0] if c.length == 1
+	    		{:pobox => a, :ext => b, :street => c, 
+				:locality => '', :region => '', :code => '', :country => ''}
+	    	} | seq(component, ';', component) {|a, _, b|
+	    		a = a[0] if a.length == 1
+	    		b = b[0] if b.length == 1
+	    		{:pobox => a, :ext => b, :street => '', 
+				:locality => '', :region => '', :code => '', :country => ''}
+	    	} | component {|a|
+	    		a = a[0] if a.length == 1
+	    		{:pobox => a, :ext => '', :street => '', 
+				:locality => '', :region => '', :code => '', :country => ''}
+	    	} 
     address.eof
   end
 
-  def gender
-	  gender = seq(/[MFONU]/.r._?, text._?) { |sex, gender|
-		  		sex = sex[0] unless sex.empty?
-		  		gender = gender[0] unless gender.empty?
-		  		{:sex => sex, :gender => gender}
-	  		}
-	  gender.eof
-  end
-
-  def typeparamtel1list
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
-    xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
-    typeparamtel1	= /TEXT/i.r | /VOICE/i.r | /FAX/i.r | /CELL/i.r | /VIDEO/i.r |
-	    		/PAGER/i.r | /TEXTPHONE/i.r | ianaToken | xname
-    typeparamtel1list = typeparamtel1.map {|t| [t] } | seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
-	    			[a, b].flatten
-			}
-    typeparamtel1list.eof
-  end
-
-  def rfc5646langvalue
-    rfc5646irregular	= /en-GB-oed/i.r | /i-ami/i.r | /i-bnn/i.r | /i-default/i.r | /i-enochian/i.r |
-	    			/i-hak/i.r | /i-klingon/i.r | /i-lux/i.r | /i-mingo/i.r |
-				/i-navajo/i.r | /i-pwn/i.r | /i-tao/i.r  | /i-tay/i.r |
-				/i-tsu/i.r | /sgn-BE-FR/i.r | /sgn-BE-NL/i.r | /sgn-CH-DE/i.r
-    rfc5646regular	= /art-lojban/i.r | /cel-gaulish/i.r | /no-bok/i.r | /no-nyn/i.r |
-	    			/zh-guoyu/i.r | /zh-hakka/i.r | /zh-min/i.r | /zh-min-nan/i.r |
-				/zh-xiang/i.r
-    rfc5646grandfathered	= rfc5646irregular | rfc5646regular
-    rfc5646privateuse1	= seq('-', /[0-9A-Za-z]{1,8}/.r)
-    rfc5646privateuse	= seq('x', rfc5646privateuse1 * (1..-1))
-    rfc5646extension1	= seq('-', /[0-9A-Za-z]{2,8}/.r)
-    rfc5646extension	= seq('-', /[0-9][A-WY-Za-wy-z]/.r, rfc5646extension1 * (1..-1))
-    rfc5646variant	= seq('-', /[A-Za-z]{5,8}/.r) | seq('-', /[0-9][A-Za-z0-9]{3}/)
-    rfc5646region	= seq('-', /[A-Za-z]{2}/.r) | seq('-', /[0-9]{3}/)
-    rfc5646script	= seq('-', /[A-Za-z]{4}/.r)
-    rfc5646extlang	= seq(/[A-Za-z]{3}/.r, /[A-Za-z]{3}/.r._?, /[A-Za-z]{3}/.r._?)
-    rfc5646language	= seq(/[A-Za-z]{2,3}/.r , rfc5646extlang._?) | /[A-Za-z]{4}/.r | /[A-Za-z]{5,8}/.r
-    rfc5646langtag	= seq(rfc5646language, rfc5646script._?, rfc5646region._?,
-			      rfc5646variant.star, rfc5646extension.star, rfc5646privateuse._? ) {|a, b, c, d, e, f|
-	    			[a, b, c, d, e, f].flatten.join('')
-    			}
-    rfc5646langvalue 	= rfc5646langtag | rfc5646privateuse | rfc5646grandfathered
-    rfc5646langvalue.eof
-  end
-
-  def typerelatedlist
-      typeparamrelated    = /CONTACT/i.r | /ACQUAINTANCE/i.r | /FRIEND/i.r | /MET/i.r |
-                              /CO-WORKER/i.r | /COLLEAGUE/i.r | /CO-RESIDENT/i.r | /NEIGHBOR/i.r |
-                              /CHILD/i.r | /PARENT/i.r | /SIBLING/i.r | /SPOUSE/i.r | /KIN/i.r |
-                              /MUSE/i.r | /CRUSH/i.r | /DATE/i.r | /SWEETHEART/i.r | /ME/i.r |
-                              /AGENT/i.r | /EMERGENCY/i.r
-      typerelatedlist	= typeparamrelated {|t| [t] } | seq(typeparamrelated, ';', lazy{typerelatedlist}) {|a, _, b|
-	      			[a, b].flatten
-			}
-      typerelatedlist.eof
-  end
 
   # Enforce type restrictions on values of particular properties.
   # If successful, return typed interpretation of string
@@ -326,84 +259,56 @@ module Vcard::V3_0
     case key
      when :VERSION
 	    ret = versionvalue._parse ctx1
-     when :SOURCE, :PHOTO, :IMPP, :GEO, :LOGO, :MEMBER, :SOUND, :URL, :FBURL, :CALADRURI, :CALURI
+     when :SOURCE, :URL
 	    ret = uri._parse ctx1
-     when :KIND
-	    ret = kindvalue._parse ctx1
-     when :XML, :FN, :EMAIL, :TITLE, :ROLE, :NOTE
+     when :NAME, :FN, :NICKNAME, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
 	    ret = text._parse ctx1
-     when :NICKNAME, :ORG, :CATEGORIES
+     when :CLASS
+	    ret = classvalue._parse ctx1
+     when :ORG, :CATEGORIES
 	    ret = textlist._parse ctx1
+     when :PROFILE
+	    ret = profilevalue._parse ctx1
      when :N
 	    ret = fivepartname._parse ctx1
+     when :PHOTO, :LOGO, :SOUND
+	     if params and params[:VALUE] == 'uri'
+		     ret = uri._parse ctx1
+	     else
+		     ret = binary._parse ctx1
+	     end
+     when :KEY
+	     if params and params[:ENCODING] == 'b'
+		     ret = binary._parse ctx1
+	     else
+		     ret = text._parse ctx1
+	     end
+     when :BDAY
+	     if params and params[:VALUE] == 'date-time'
+		     ret = date_time._parse ctx1
+	     else
+		     ret = date._parse ctx1
+	     end
+     when :REV
+	     if params and params[:VALUE] == 'date'
+		     ret = date._parse ctx1
+	     else
+		     ret = date_time._parse ctx1
+	     end
      when :ADR
 	    ret = address._parse ctx1
-    when :BDAY, :ANNIVERSARY
-	    if params and params[:VALUE] == 'text'
-		    if params[:CALSCALE]
-		        STDERR.puts "Specified CALSCALE within property #{key} as text"
-		        raise ctx1.generate_error 'source'
-		    end
-		    ret = text._parse ctx1
-	    else
-		    if params[:CALSCALE] and /^T/ =~ value
-		        STDERR.puts "Specified CALSCALE within property #{key} as time"
-		        raise ctx1.generate_error 'source'
-		    end
-		    ret = date_and_or_time._parse ctx1
-	    end
     when :TEL
-	    if params and params[:TYPE]
-		    ret1 = typeparamtel1list.parse params[:type]
-		    if ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
-	      		raise @ctx.generate_error 'source'
-		    end
-	    end
+	    ret = phoneNumber._parse ctx1
+    when :TZ
+	    ret = utc_offset._parse ctx1
+    when :GEO
+	    ret = geovalue._parse ctx1
+    when :AGENT
 	    if params and params[:VALUE] == 'uri'
-		    ret = uri._parse ctx1
-	    else
-		    ret = text._parse ctx1
-	    end
-     when :RELATED
-	    if params and params[:TYPE]
-		    ret1 = typerelatedlist.parse params[:type]
-		    if ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
-	      		raise @ctx.generate_error 'source'
-		    end
-	    end
-	    if params and params[:VALUE] == 'uri'
-		    ret = uri._parse ctx1
-	    else
-		    ret = text._parse ctx1
-	    end
-     when :UID, :KEY
-	    if params and params[:VALUE] == 'text'
-		    ret = text._parse ctx1
-	    else
-		    ret = uri._parse ctx1
-	    end
-     when :GENDER
-	    ret = gender._parse ctx1
-     when :LANG
-	    ret = rfc5646langvalue._parse ctx1
-     when :TZ
-	     if params and params[:VALUE] == 'uri'
 	    	ret = uri._parse ctx1
-	     elsif params and params[:VALUE] == 'utc_offset'
-	    	ret = utc_offset._parse ctx1
-	     else
-	    	ret = text._parse ctx1
-	     end
-      when :REV
-	      ret = timestamp._parse ctx1
-     when :CLIENTPIDMAP
-	     if params and params[:PID]
-		        STDERR.puts "Specified PID parameter in CLIENTPIDMAP property"
-	      		raise @ctx.generate_error 'source'
-	     end
-	     ret = clientpidmap._parse ctx1
+	    else
+		ret = vcard._parse ctx1
+	    end
     else
 	    ret = value
     end
@@ -416,6 +321,75 @@ module Vcard::V3_0
         raise ctx1.generate_error 'source'
     end
     return ret
+  end
+
+  def paramcheck(prop, params) 
+	if params and params[:TYPE]
+		parse_err("multiple values for :TYPE parameter of #{prop}") if params[:TYPE].kind_of?(Array) and prop != :EMAIL and prop != :ADR and prop != :TEL
+	end
+	case prop
+	when :NAME, :PROFILE, :TZ, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
+		parse_err("illegal parameters #{params} given for #{prop}") unless params.empty?
+	when :SOURCE
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :CONTEXT or key =~ /^x/i
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "uri"
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :CONTEXT and val != "word"
+		}
+	when :FN, :N, :NICKNAME, :MAILER, :TITLE, :ROLE, :ORG, :CATEGORIES, :NOTE, :SORT_STRING
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
+		}
+	when :TEL
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE
+		}
+		# we do not check the values of the :TEL :TYPE parameter, because they include ianaToken
+	when :EMAIL
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE
+		}
+		# we do not check the values of the first :EMAIL :TYPE parameter, because they include ianaToken
+		if params[:TYPE].length > 1
+			parse_err("illegal second parameter #{params[:TYPE][1]} given for #{prop}") unless params[:TYPE][1] == 'PREF'
+		end
+	when :ADR, :LABEL
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i or key == :TYPE
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
+		}
+		# we do not check the values of the :ADR :TYPE parameter, because they include ianaToken
+	when :KEY
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE or key == :ENCODING
+		}
+		# we do not check the values of the :KEY :TYPE parameter, because they include ianaToken
+	when :PHOTO, :LOGO, :SOUND
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :TYPE or key == :ENCODING
+		}
+		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "binary" and params[:VALUE] != "uri"
+		parse_err("illegal value #{params[:ENCODING]} of :ENCODING given for #{prop}") if params[:ENCODING] and (params[:ENCODING] != "b" or params[:VALUE] == "uri")
+		parse_err("mandatory parameter of :ENCODING missing for #{prop}") if !params.key(:ENCODING) and (!params.key?(:VALUE) or params[:VALUE] == "binary")
+		# TODO restriction of :TYPE to image types registered with IANA
+		# TODO restriction of :TYPE to sound types registered with IANA
+	when :BDAY, :REV
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE 
+		}
+		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "date" and params[:VALUE] != "date-time"
+	when :AGENT
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE 
+		}
+		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "uri"
+	else
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
+		}
+	end
   end
 
 private

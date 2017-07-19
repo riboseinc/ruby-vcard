@@ -183,10 +183,10 @@ module Vcard::V4_0
 		      value, /[\r\n]/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
+			Vcard::V4_0::Typegrammars.paramcheck(key, params.empty?  ? {} : params[0])
 			hash[key][:value] = Vcard::V4_0::Typegrammars.typematch(key, params[0], :GENERIC, value)
 			hash[key][:group] = group[0]  unless group.empty?
 			hash[key][:params] = params[0] unless params.empty?
-			# TODO restrictions on params
 			hash
 		}
         props	= (''.r & beginend).map {|e|
