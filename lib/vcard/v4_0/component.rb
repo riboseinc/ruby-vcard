@@ -11,6 +11,7 @@ class Component < Vobject::Component
 
     def parse(vcf)
           hash = Vcard::V4_0::Grammar.parse(vcf)
+	  pp hash
           comp_name = hash.keys.first
           self.new comp_name, hash[comp_name]
     end
