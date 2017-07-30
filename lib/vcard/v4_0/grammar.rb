@@ -7,6 +7,8 @@ include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
+require "vcard/v4_0/paramcheck"
+require "vcard/v4_0/typegrammars"
 require_relative "../../c"
 require_relative "../../error"
 
@@ -46,7 +48,7 @@ module Vcard::V4_0
 			/GEO/i.r | /TZ/i.r | /LABEL/i.r
     otherparamname = C::NAME ^ paramname
     paramvalue 	= C::QUOTEDSTRING.map {|s| s } | C::PTEXT.map {|s| s.upcase }
-    tzidvalue 	= seq("/".r._?, pText).map {|_, val| val}    
+    tzidvalue 	= seq("/".r._?, C::PTEXT).map {|_, val| val}    
     calscalevalue = /GREGORIAN/i.r | C::IANATOKEN | C::XNAME
     prefvalue	= /[0-9]{1,2}/i.r | '100'.r
     pidvalue	= /[0-9]+(\.[0-9]+)?/.r
@@ -83,12 +85,12 @@ module Vcard::V4_0
     rfc4288typename     = rfc4288regname
     rfc4288subtypename  = rfc4288regname
     mediavalue	= seq(rfc4288typename, "/", rfc4288subtypename, mediatail.star)
-    pvalueList 	= (paramvalue & /[;:]/.r).map {|e| 
-	    		[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
-    		} | (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
+    pvalueList 	=  (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
 			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
 			ret
-		}
+		} | (paramvalue & /[;:]/.r).map {|e| 
+	    		[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
+    		}
     quotedStringList =  (seq(C::QUOTEDSTRING, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
                          ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")
                          ret
@@ -139,9 +141,8 @@ module Vcard::V4_0
 			e[0]
     		}
 
-    value 	= valueChar.star.map(&:join)
-    contentline = seq(linegroup._?, name, params._?, ':', 
-		      value, /[\r\n]/) {|group, name, params, _, value, _|
+    contentline = seq(linegroup._?, C::NAME, params._?, ':', 
+		      C::VALUE, /[\r\n]/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
 			Vcard::V4_0::Paramcheck.paramcheck(key, params.empty?  ? {} : params[0], @ctx)
@@ -150,9 +151,7 @@ module Vcard::V4_0
 			hash[key][:params] = params[0] unless params.empty?
 			hash
 		}
-        props	= (''.r & beginend).map {|e|
-			 	{}   
-			} | seq(contentline, lazy{props}) {|c, rest|
+        props	=  seq(contentline, lazy{props}) {|c, rest|
 			c.merge( rest ) { | key, old, new|
 				if @cardinality1[:PROP].include?(key.upcase) and
 					!(new.kind_of?(Array) and 
@@ -168,10 +167,12 @@ module Vcard::V4_0
 				[old,  new].flatten
 				# deal with duplicate properties
 			}
+			} | (''.r & beginend).map {|e|
+			 	{}   
 			}
 
 	calpropname = /VERSION/i.r 
-	calprop     = seq(calpropname, ':', value, 	/[\r\n]/) {|key, _, value, _|
+	calprop     = seq(calpropname, ':', C::VALUE, 	/[\r\n]/) {|key, _, value, _|
 	    		key = key.upcase.gsub(/-/,"_").to_sym
 	    		hash = { key => {} }
 			hash[key][:value] = Vcard::V4_0::Typegrammars.typematch(key, nil, :VCARD, value)

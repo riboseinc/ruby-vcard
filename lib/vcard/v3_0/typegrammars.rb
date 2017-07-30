@@ -70,8 +70,7 @@ module Vcard::V3_0
 
   def uri
 	uri         = /\S+/.r.map {|s|
-	                  	parse_err("invalid URI: #{s}") unless s =~ URI::regexp 
-	                  	s
+	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
 			 }
 	uri.eof
   end
@@ -376,9 +375,8 @@ module Vcard::V3_0
 private
 
 
-   def parse_err(msg)
-	   	  STDERR.puts msg
-	          raise @ctx.generate_error 'source'
+   def parse_err(msg, ctx)
+	          raise ctx.report_error msg, 'source'
    end
 
   end

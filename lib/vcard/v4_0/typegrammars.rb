@@ -36,16 +36,14 @@ module Vcard::V4_0
 
   def uri
 	uri         = /\S+/.r.map {|s|
-	                  	parse_err("invalid URI: #{s}") unless s =~ URI::regexp 
-	                  	s
+	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
 			 }
 	uri.eof
   end
 
   def clientpidmap
 	uri         = /\S+/.r.map {|s|
-	                  	parse_err("invalid URI: #{s}") unless s =~ URI::regexp 
-				s
+	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
 			 }
 	clientpidmap = seq(/[0-9]/.r, ';', uri) {|a, _, b|
 		{:pid => a, :uri => b}
@@ -101,37 +99,30 @@ module Vcard::V4_0
   end
 
   def timeT	
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {|s, h, m, z|
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = z[0] unless s.empty?
-                    h
-                }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
+            } | seq(hour, minute, C::ZONE._?) {|h, m, z|
                 h = {:hour => h, :min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } |	seq(hour, zone._?) {|h, z|
+            } |	seq(hour, C::ZONE._?) {|h, z|
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, second, zone._?) {|m, s, z|
+            } | seq('-', minute, second, C::ZONE._?) {|m, s, z|
                 h = {:min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, zone._?) {|m, z|
+            } | seq('-', minute, C::ZONE._?) {|m, z|
                 h = {:min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', '-', second, zone._?) {|s, z|
+            } | seq('-', '-', second, C::ZONE._?) {|s, z|
                 h = {:sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -140,22 +131,15 @@ module Vcard::V4_0
   end
 
   def time_notrunc
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
-    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time_notrunc	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
+            } | seq(hour, minute, C::ZONE._?) {|h, m, z|
                 h = {:hour => h, :min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-	    	} | seq(hour, zone._?) {|h, z|
+	    	} | seq(hour, C::ZONE._?) {|h, z|
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -164,14 +148,7 @@ module Vcard::V4_0
   end
 
   def time_complete
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
-    time_complete	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time_complete	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -180,25 +157,18 @@ module Vcard::V4_0
   end
 
  def date_time
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time_notrunc	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
+            } | seq(hour, minute, C::ZONE._?) {|h, m, z|
                 h = {:hour => h, :min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-	    	} | seq(hour, zone._?) {|h, z|
+	    	} | seq(hour, C::ZONE._?) {|h, z|
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -221,17 +191,10 @@ module Vcard::V4_0
     date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
             {:year => yy, :month => mm, :day => dd}
 		}
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_complete	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time_complete	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -243,25 +206,18 @@ module Vcard::V4_0
   end
 
   def date_and_or_time
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time_notrunc	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                     h = {:hour => h, :min => m, :sec => s}
                     h[:zone] = z[0] unless z.empty?
                     h
-            } | seq(hour, minute, zone._?) {|h, m, z|
+            } | seq(hour, minute, C::ZONE._?) {|h, m, z|
                     h = {:hour => h, :min => m}
                     h[:zone] = z[0] unless z.empty?
                     h
-            } | seq(hour, zone._?) {
+            } | seq(hour, C::ZONE._?) {
                     h = {:hour => h}
                     h[:zone] = z[0] unless z.empty?
                     h
@@ -289,27 +245,27 @@ module Vcard::V4_0
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
                 {:day => dd}
 		}
-    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    time	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
+            } | seq(hour, minute, C::ZONE._?) {|h, m, z|
                 h = {:hour => h, :min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } |	seq(hour, zone._?) {|h, z|
+            } |	seq(hour, C::ZONE._?) {|h, z|
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, second, zone._?) {|m, s, z|
+            } | seq('-', minute, second, C::ZONE._?) {|m, s, z|
                 h = {:min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, zone._?) {|m, z|
+            } | seq('-', minute, C::ZONE._?) {|m, z|
                 h = {:min => m}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', '-', second, zone._?) {|s, z|
+            } | seq('-', '-', second, C::ZONE._?) {|s, z|
                 h = {:sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -319,17 +275,14 @@ module Vcard::V4_0
   end
   
   def utc_offset
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
+    utc_offset 	= C::UTC_OFFSET
+    utc_offset.eof
   end
 
   def kindvalue
 	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r |
 		  	C::IANATOKEN | C::XNAME
-	  kindvlaue.eof
+	  kindvalue.eof
   end
 
   def fivepartname
@@ -389,32 +342,6 @@ module Vcard::V4_0
     typeparamtel1list.eof
   end
 
-  def rfc5646langvalue
-    rfc5646irregular	= /en-GB-oed/i.r | /i-ami/i.r | /i-bnn/i.r | /i-default/i.r | /i-enochian/i.r |
-	    			/i-hak/i.r | /i-klingon/i.r | /i-lux/i.r | /i-mingo/i.r |
-				/i-navajo/i.r | /i-pwn/i.r | /i-tao/i.r  | /i-tay/i.r |
-				/i-tsu/i.r | /sgn-BE-FR/i.r | /sgn-BE-NL/i.r | /sgn-CH-DE/i.r
-    rfc5646regular	= /art-lojban/i.r | /cel-gaulish/i.r | /no-bok/i.r | /no-nyn/i.r |
-	    			/zh-guoyu/i.r | /zh-hakka/i.r | /zh-min/i.r | /zh-min-nan/i.r |
-				/zh-xiang/i.r
-    rfc5646grandfathered	= rfc5646irregular | rfc5646regular
-    rfc5646privateuse1	= seq('-', /[0-9A-Za-z]{1,8}/.r)
-    rfc5646privateuse	= seq('x', rfc5646privateuse1 * (1..-1))
-    rfc5646extension1	= seq('-', /[0-9A-Za-z]{2,8}/.r)
-    rfc5646extension	= seq('-', /[0-9][A-WY-Za-wy-z]/.r, rfc5646extension1 * (1..-1))
-    rfc5646variant	= seq('-', /[A-Za-z]{5,8}/.r) | seq('-', /[0-9][A-Za-z0-9]{3}/)
-    rfc5646region	= seq('-', /[A-Za-z]{2}/.r) | seq('-', /[0-9]{3}/)
-    rfc5646script	= seq('-', /[A-Za-z]{4}/.r)
-    rfc5646extlang	= seq(/[A-Za-z]{3}/.r, /[A-Za-z]{3}/.r._?, /[A-Za-z]{3}/.r._?)
-    rfc5646language	= seq(/[A-Za-z]{2,3}/.r , rfc5646extlang._?) | /[A-Za-z]{4}/.r | /[A-Za-z]{5,8}/.r
-    rfc5646langtag	= seq(rfc5646language, rfc5646script._?, rfc5646region._?,
-			      rfc5646variant.star, rfc5646extension.star, rfc5646privateuse._? ) {|a, b, c, d, e, f|
-	    			[a, b, c, d, e, f].flatten.join('')
-    			}
-    rfc5646langvalue 	= rfc5646langtag | rfc5646privateuse | rfc5646grandfathered
-    rfc5646langvalue.eof
-  end
-
   def typerelatedlist
       typeparamrelated    = /CONTACT/i.r | /ACQUAINTANCE/i.r | /FRIEND/i.r | /MET/i.r |
                               /CO-WORKER/i.r | /COLLEAGUE/i.r | /CO-RESIDENT/i.r | /NEIGHBOR/i.r |
@@ -439,7 +366,7 @@ module Vcard::V4_0
      when :KIND
 	    ret = kindvalue._parse ctx1
      when :XML, :FN, :EMAIL, :TITLE, :ROLE, :NOTE
-	    ret = text._parse ctx1
+	    ret = textT._parse ctx1
      when :NICKNAME, :ORG, :CATEGORIES
 	    ret = textlist._parse ctx1
      when :N
@@ -452,7 +379,7 @@ module Vcard::V4_0
 		        STDERR.puts "Specified CALSCALE within property #{key} as text"
 		        raise ctx1.generate_error 'source'
 		    end
-		    ret = text._parse ctx1
+		    ret = textT._parse ctx1
 	    else
 		    if params[:CALSCALE] and /^T/ =~ value
 		        STDERR.puts "Specified CALSCALE within property #{key} as time"
@@ -471,7 +398,7 @@ module Vcard::V4_0
 	    if params and params[:VALUE] == 'uri'
 		    ret = uri._parse ctx1
 	    else
-		    ret = text._parse ctx1
+		    ret = textT._parse ctx1
 	    end
      when :RELATED
 	    if params and params[:TYPE]
@@ -495,7 +422,7 @@ module Vcard::V4_0
      when :GENDER
 	    ret = gender._parse ctx1
      when :LANG
-	    ret = rfc5646langvalue._parse ctx1
+	    ret = C::RFC5646LANGVALUE._parse ctx1
      when :TZ
 	     if params and params[:VALUE] == 'uri'
 	    	ret = uri._parse ctx1
@@ -531,9 +458,8 @@ module Vcard::V4_0
 private
 
 
-   def parse_err(msg)
-	   	  STDERR.puts msg
-	          raise @ctx.generate_error 'source'
+   def parse_err(msg, ctx)
+	          raise ctx.report_error msg, 'source'
    end
 
   end

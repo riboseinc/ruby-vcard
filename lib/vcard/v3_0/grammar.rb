@@ -7,6 +7,8 @@ include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
+require "vcard/v3_0/paramcheck"
+require "vcard/v3_0/typegrammars"
 require_relative "../../c"
 require_relative "../../error"
 
@@ -106,7 +108,7 @@ module Vcard::V3_0
 
     value 	= valueChar.star.map(&:join)
     contentline = seq(linegroup._?, C::NAME, params._?, ':', 
-		      value, /[\r\n]/) {|group, name, params, _, value, _|
+		      C::VALUE, /[\r\n]/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
 			hash[key][:value] = typematch(key, params[0], :GENERIC, value, @ctx)
@@ -116,9 +118,7 @@ module Vcard::V3_0
 			# TODO restrictions on params
 			hash
 		}
-        props	= (''.r & beginend).map {|e|
-			 	{}   
-			} | seq(contentline, lazy{props}) {|c, rest|
+        props	=  seq(contentline, lazy{props}) {|c, rest|
 			c.merge( rest ) { | key, old, new|
 				if @cardinality1[:PROP].include?(key.upcase) 
 						parse_err("Violated cardinality of property #{key}")
@@ -126,10 +126,12 @@ module Vcard::V3_0
 				[old,  new].flatten
 				# deal with duplicate properties
 			}
+			} | (''.r & beginend).map {|e|
+			 	{}   
 			}
 
 	calpropname = /VERSION/i.r 
-	calprop     = seq(linegroup._?, calpropname, ':', value, 	/[\r\n]/) {|group, key, _, value, _|
+	calprop     = seq(linegroup._?, calpropname, ':', C::VALUE, 	/[\r\n]/) {|group, key, _, value, _|
 	    		key = key.upcase.gsub(/-/,"_").to_sym
 	    		hash = { key => {} }
 			hash[key][:value] = typematch(key, nil, :VCARD, value, @ctx)
