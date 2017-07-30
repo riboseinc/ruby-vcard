@@ -76,72 +76,119 @@ module Vcard::V3_0
 	uri.eof
   end
 
-  def text
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    text.eof
+  def textT
+    textT	= C::TEXT
+    textT.eof
   end
 
   def textlist
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    textlist	= text.map {|t| [t]} | 
-	    	seq(text, ',', lazy{textlist}) { |a, b| [a, b].flatten }
+    text	= C::TEXT
+    textlist	= 
+	    	seq(text, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
+	    	text.map {|t| [t]}
     textlist.eof
   end
 
-  def date
-     date	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-	     	} | /[0-9]{4}/.r {|yy|
-			#Time.utc(yy, 0, 0) 
-		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, mm|
-			#Time.utc(yy, mm, 0)
+  def dateT
+     dateT	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+		    {:year => yy, :month => mm, :day => dd}
+        } | /[0-9]{4}/.r {|yy|
+			{:year => yy }
+		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
+			{:year => yy, :day => dd }
 		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-
+            {:month => mm}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		    {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		    {:day => dd}
 		}
-     date.eof
+     dateT.eof
   end
 
-  def time	
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+  def timeT	
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {|s, h, m, z|
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = z[0] unless s.empty?
+                    h
+                }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) |
-	    	seq('-', minute, second, zone._?) |
-	    	seq('-', minute, zone._?) |
-	    	seq('-', '-', second, zone._?) 
+    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } |	seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, second, zone._?) {|m, s, z|
+                h = {:min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, zone._?) {|m, z|
+                h = {:min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', '-', second, zone._?) {|s, z|
+                h = {:sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            }
     time.eof
   end
 
   def date_time
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
+    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	} | seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	}
      date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+            {:year => yy, :month => mm, :day => dd}
+        } |
+		seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		    {:month => mm, :date => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		    {:date => dd}
 		}
-     date_time	= seq(date_noreduc, 'T', time_notrunc) {
+     date_time	= seq(date_noreduc, 'T', time_notrunc) {|d, _, t|
+                d.merge t
 	     	}
      date_time.eof
   end
 
   def utc_offset
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, ':', /[0-9]{2}/.r)
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r) {|sign, h, m, sec|
+	    		hash = {:sign => sign, :hr => h, :min => m }
+			hash[:sec] = sec[0] unless sec.empty?
+			hash
+    		}
     utc_offset.eof
   end
 
@@ -155,10 +202,10 @@ module Vcard::V3_0
 
   def fivepartname
     text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    component	= text.map {|t| [t] }| 
+    component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		}
+		} | text.map {|t| [t] }
     fivepartname = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
@@ -190,11 +237,11 @@ module Vcard::V3_0
   end
 
   def address
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    component	= text.map {|t| [t] }| 
+    text	= C::TEXT
+    component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		}
+		} | text.map {|t| [t] }
     address = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
@@ -254,7 +301,8 @@ module Vcard::V3_0
 
   # Enforce type restrictions on values of particular properties.
   # If successful, return typed interpretation of string
-  def typematch(key, params, component, value)
+  def typematch(key, params, component, value, ctx)
+    property_parent(key, component, value, ctx)
     ctx1 = Rsec::ParseContext.new value, 'source'
     case key
      when :VERSION
@@ -287,11 +335,11 @@ module Vcard::V3_0
 	     if params and params[:VALUE] == 'date-time'
 		     ret = date_time._parse ctx1
 	     else
-		     ret = date._parse ctx1
+		     ret = dateT._parse ctx1
 	     end
      when :REV
 	     if params and params[:VALUE] == 'date'
-		     ret = date._parse ctx1
+		     ret = dateT._parse ctx1
 	     else
 		     ret = date_time._parse ctx1
 	     end
@@ -323,74 +371,7 @@ module Vcard::V3_0
     return ret
   end
 
-  def paramcheck(prop, params) 
-	if params and params[:TYPE]
-		parse_err("multiple values for :TYPE parameter of #{prop}") if params[:TYPE].kind_of?(Array) and prop != :EMAIL and prop != :ADR and prop != :TEL
-	end
-	case prop
-	when :NAME, :PROFILE, :TZ, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
-		parse_err("illegal parameters #{params} given for #{prop}") unless params.empty?
-	when :SOURCE
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :CONTEXT or key =~ /^x/i
-			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "uri"
-			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :CONTEXT and val != "word"
-		}
-	when :FN, :N, :NICKNAME, :MAILER, :TITLE, :ROLE, :ORG, :CATEGORIES, :NOTE, :SORT_STRING
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
-			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
-		}
-	when :TEL
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE
-		}
-		# we do not check the values of the :TEL :TYPE parameter, because they include ianaToken
-	when :EMAIL
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE
-		}
-		# we do not check the values of the first :EMAIL :TYPE parameter, because they include ianaToken
-		if params[:TYPE].length > 1
-			parse_err("illegal second parameter #{params[:TYPE][1]} given for #{prop}") unless params[:TYPE][1] == 'PREF'
-		end
-	when :ADR, :LABEL
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i or key == :TYPE
-			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
-		}
-		# we do not check the values of the :ADR :TYPE parameter, because they include ianaToken
-	when :KEY
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :TYPE or key == :ENCODING
-		}
-		# we do not check the values of the :KEY :TYPE parameter, because they include ianaToken
-	when :PHOTO, :LOGO, :SOUND
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :TYPE or key == :ENCODING
-		}
-		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "binary" and params[:VALUE] != "uri"
-		parse_err("illegal value #{params[:ENCODING]} of :ENCODING given for #{prop}") if params[:ENCODING] and (params[:ENCODING] != "b" or params[:VALUE] == "uri")
-		parse_err("mandatory parameter of :ENCODING missing for #{prop}") if !params.key(:ENCODING) and (!params.key?(:VALUE) or params[:VALUE] == "binary")
-		# TODO restriction of :TYPE to image types registered with IANA
-		# TODO restriction of :TYPE to sound types registered with IANA
-	when :BDAY, :REV
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE 
-		}
-		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "date" and params[:VALUE] != "date-time"
-	when :AGENT
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE 
-		}
-		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}") if params[:VALUE] and params[:VALUE] != "uri"
-	else
-		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}") unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
-			parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "ptext"
-		}
-	end
-  end
+
 
 private
 

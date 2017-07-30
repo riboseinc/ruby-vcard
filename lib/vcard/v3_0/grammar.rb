@@ -7,6 +7,8 @@ include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
+require_relative "../c"
+require_relative "../error"
 
 module Vcard::V3_0
 	class Grammar
@@ -19,7 +21,6 @@ module Vcard::V3_0
     @cardinality1 = {}
     @cardinality1[:PARAM] = Set.new [:VALUE]
     @cardinality1[:PROP] = Set.new [:KIND, :N, :BDAY, :ANNIVERSARY, :GENDER, :PRODID, :REV, :UID]
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
     utf8_tail 	= /[\u0080-\u00bf]/.r
     utf8_2 	= /[\u00c2-\u00df]/.r  | utf8_tail
     utf8_3 	= /[\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef]/.r  | 
@@ -33,30 +34,21 @@ module Vcard::V3_0
     valueChar 	= wsp | vChar | nonASCII
     dQuote 	= /"/.r
 
-    group 	= ianaToken
-    vendorid	= /[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]/.r
-    xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
-    		  # different from ical
+    group 	= C::IANATOKEN
     linegroup 	= group <<  '.' 
     beginend 	= /BEGIN/i.r | /END/i.r
-    name  	= xname | seq( ''.r ^ beginend, ianaToken )[1]
-    boolean 	= /TRUE/i.r | /FALSE/i.r
 
 
 
 # parameters and parameter types
     paramname 		= /ENCODING/i.r | /LANGUAGE/i.r | /CONTEXT/i.r | /TYPE/i.r | /VALUE/i.r 
-    otherparamname = xname | seq(''.r ^ paramname, ianaToken)[1]
-    pText  	= safeChar.star.map(&:join)
-    quotedString = seq(dQuote, qSafeChar.star, dQuote) {|_, qSafe, _| 
-	    		qSafe.join('') 
-    		}
-    paramvalue 	= quotedString.map {|s| s } | pText.map {|s| s.upcase }
+    otherparamname = C::NAME ^ paramname
+    paramvalue 	= C::QUOTEDSTRING.map {|s| s } | C::PTEXT.map {|s| s.upcase }
     
     prefvalue	= /[0-9]{1,2}/i.r | '100'.r
     valuetype 	= /URI/i.r | /DATE/i.r | /DATE-TIME/i.r | /BINARY/i.r | /PTEXT/i.r  
     mediaattr	= /[!\"#$%&'*+.^A-Z0-9a-z_`i{}|~-]+/.r
-    mediavalue	=	mediaattr | quotedString
+    mediavalue	=	mediaattr | C::QUOTEDSTRING
     mediatail	= seq(';', mediaattr, '=', mediavalue)
     rfc4288regname      = /[A-Za-z0-9!#$&.+^+-]{1,127}/.r
     rfc4288typename     = rfc4288regname
@@ -68,11 +60,11 @@ module Vcard::V3_0
 			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
 			ret
 		}
-    quotedStringList = (quotedString & /[;:]/.r).map {|e|
-                        [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
-                } | (seq(quotedString, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
+    quotedStringList = (seq(C::QUOTEDSTRING, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
                          ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")
                          ret
+                } | (C::QUOTEDSTRING & /[;:]/.r).map {|e|
+                        [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
                 }
 
     fmttypevalue 	= seq(rfc4288typename, "/", rfc4288subtypename).map(&:join)
@@ -100,9 +92,7 @@ module Vcard::V3_0
 			parse_err("Violated format of parameter value #{name} = #{val}")
 		}
 
-    params	= seq(';'.r >> param ^ ';'.r).map {|e|
-			e[0]
-    		} | seq(';'.r >> param, lazy{params} ) {|p, ps|
+    params	= seq(';'.r >> param, lazy{params} ) {|p, ps|
 			p.merge(ps) {|key, old, new|
 				if @cardinality1[:PARAM].include?(key)
 						parse_err("Violated cardinality of parameter #{key}")
@@ -110,16 +100,18 @@ module Vcard::V3_0
 				[old,  new].flatten
 				# deal with duplicate properties
 			}
-		}
+		} |  seq(';'.r >> param ^ ';'.r).map {|e|
+			e[0]
+    		}
 
     value 	= valueChar.star.map(&:join)
-    contentline = seq(linegroup._?, name, params._?, ':', 
+    contentline = seq(linegroup._?, C::NAME, params._?, ':', 
 		      value, /[\r\n]/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
-			hash[key][:value] = typematch(key, params[0], :GENERIC, value)
+			hash[key][:value] = typematch(key, params[0], :GENERIC, value, @ctx)
 			hash[key][:group] = group[0]  unless group.empty?
-			paramcheck(key, params.empty? ? {} : params[0])
+			paramcheck(key, params.empty? ? {} : params[0], @ctx)
 			hash[key][:params] = params[0] unless params.empty?
 			# TODO restrictions on params
 			hash
@@ -140,7 +132,7 @@ module Vcard::V3_0
 	calprop     = seq(linegroup._?, calpropname, ':', value, 	/[\r\n]/) {|group, key, _, value, _|
 	    		key = key.upcase.gsub(/-/,"_").to_sym
 	    		hash = { key => {} }
-			hash[key][:value] = typematch(key, nil, :VCARD, value)
+			hash[key][:value] = typematch(key, nil, :VCARD, value, @ctx)
 			hash[key][:group] = group[0]  unless group.empty?
 			hash
 	}
