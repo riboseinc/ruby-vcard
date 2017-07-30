@@ -142,7 +142,7 @@ module Vcard::V3_0
                 h[:zone] = z[0] unless z.empty?
                 h
             }
-    time.eof
+    timeT.eof
   end
 
   def date_time

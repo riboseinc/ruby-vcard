@@ -35,6 +35,13 @@ module C
 			/UID/i.r | /CLASS/i.r | /ORG/i.r | /CATEGORIES/i.r | /N/i.r | /PHOTO/i.r |
 			/LOGO/i.r | /SOUND/i.r | /KEY/i.r | /BDAY/i.r | /REV/i.r | /ADR/i.r |
 			/TEL/i.r | /TZ/i.r | /GEO/i.r | /AGENT/i.r
+    VCARD4PROPNAMES	= /SOURCE/i.r | /KIND/i.r | /FN/i.r | /NICKNAME/i.r | /NOTE/i.r | /N/i.r |
+	    	   	/PHOTO/i.r | /BDAY/i.r | /ANNIVERSARY/i.r | /GENDER/i.r | /ADR/i.r |
+			/TEL/i.r | /EMAIL/i.r | /IMPP/i.r | /LANG/i.r | /TZ/i.r |
+			/GEO/i.r | /TITLE/i.r | /ROLE/i.r | /LOGO/i.r | /ORG/i.r |
+			/MEMBER/i.r | /RELATED/i.r | /CATEGORIES/i.r | /PRODID/i.r |
+			/REV/i.r | /SOUND/i.r | /UID/i.r | /CLIENTPIDMAP/i.r | /URL/i.r |
+			/KEY/i.r | /FBURL/i.r | /CALADRURI/i.r | /CALURI/i.r | /XML/i.r
     beginend	= /BEGIN/i.r | /END/i.r
     NAME        = C::XNAME | seq( ''.r ^ beginend, C::IANATOKEN )[1]
     durday      = seq(/[0-9]+/.r, 'D') {|d, _| {:days => d.to_i }}
@@ -107,3 +114,4 @@ module C
                             }
         RFC5646LANGVALUE    = rfc5646langtag | rfc5646privateuse | rfc5646grandfathered
 
+end

@@ -25,7 +25,7 @@ module Vcard::V4_0
   end
 
   def ianaToken
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
+    ianaToken 	= C::IANATOKEN
     ianaToken.eof
   end 
 
@@ -53,180 +53,291 @@ module Vcard::V4_0
 	clientpidmap.eof
   end
 
-  def text
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    text.eof
+  def textT
+    textT	= C::TEXT
+    textT.eof
   end
 
   def textlist
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    textlist	= text.map {|t| [t]} | 
-	    	seq(text, ',', lazy{textlist}) { |a, b| [a, b].flatten }
+    textlist	= 
+	    	seq(C::TEXT, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
+	    	C::TEXT.map {|t| [t]} 
     textlist.eof
   end
 
-  def date
-     date	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-	     	} | /[0-9]{4}/.r {|yy|
-			#Time.utc(yy, 0, 0) 
-		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, mm|
-			#Time.utc(yy, mm, 0)
+  def dateT
+     dateT	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+		    {:year => yy, :month => mm, :day => dd}
+        } | /[0-9]{4}/.r {|yy|
+			{:year => yy }
+		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
+			{:year => yy, :day => dd }
 		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-
+            {:month => mm}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		    {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		    {:day => dd}
 		}
-     date.eof
+     dateT.eof
   end
 
   def date_noreduc
      date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
+	     		{:year => yy, :month => mm, :day => dd}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		        {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		        {:day => dd}
 		}
      date_noreduc.eof
   end
 
   def date_complete
      date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+            {:year => yy, :month => mm, :day => dd}
 		}
      date_complete.eof
   end
 
-  def time	
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+  def timeT	
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {|s, h, m, z|
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = z[0] unless s.empty?
+                    h
+                }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) |
-	    	seq('-', minute, second, zone._?) |
-	    	seq('-', minute, zone._?) |
-	    	seq('-', '-', second, zone._?) 
+    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } |	seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, second, zone._?) {|m, s, z|
+                h = {:min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, zone._?) {|m, z|
+                h = {:min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', '-', second, zone._?) {|s, z|
+                h = {:sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            }
     time.eof
   end
 
   def time_notrunc
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
-    time_notrunc.eof
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	} | seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	}
+	time_notrunc.eof
   end
 
   def time_complete
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
-    hour	= /[0-9]{2}/.r
-    minute	= /[0-9]{2}/.r
-    second	= /[0-9]{2}/.r
-    time_complete	= seq(hour, minute, second, zone._?) 
-    time_complete.eof
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    time_complete	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } 
+	time_complete.eof
   end
 
-  def date_time
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+ def date_time
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
+    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	} | seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+	    	}
      date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+            {:year => yy, :month => mm, :day => dd}
+        } |
+		seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		    {:month => mm, :date => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		    {:date => dd}
 		}
-     date_time	= seq(date_noreduc, 'T', time_notrunc) {
+     date_time	= seq(date_noreduc, 'T', time_notrunc) {|d, _, t|
+                d.merge t
 	     	}
      date_time.eof
   end
 
   def timestamp
-     date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+    date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+            {:year => yy, :month => mm, :day => dd}
 		}
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_complete	= seq(hour, minute, second, zone._?) 
-    timestamp 	= seq(date_complete, 'T', time_complete)
+    time_complete	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+    }
+    timestamp 	= seq(date_complete, 'T', time_complete)  {|d, _, t|
+                d.merge t
+	     	}
     timestamp.eof
   end
 
   def date_and_or_time
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    zone	= utc_offset | /Z/i.r
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) 
+    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                    h = {:hour => h, :min => m, :sec => s}
+                    h[:zone] = z[0] unless z.empty?
+                    h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                    h = {:hour => h, :min => m}
+                    h[:zone] = z[0] unless z.empty?
+                    h
+            } | seq(hour, zone._?) {
+                    h = {:hour => h}
+                    h[:zone] = z[0] unless z.empty?
+                    h
+            }
      date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
+	     		 {:year => yy, :month => mm, :day => dd}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+		         {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+		         {:day => dd}
 		}
-     date_time	= seq(date_noreduc, 'T', time_notrunc) {
+     date_time	= seq(date_noreduc, 'T', time_notrunc) {|d, _, t|
+                d.merge t
 	     	}
      date	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-	     		#Time.utc(yy, mm, dd)
+                {:year => yy, :month => mm, :day => dd}
 	     	} | /[0-9]{4}/.r {|yy|
-			#Time.utc(yy, 0, 0) 
-		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, mm|
-			#Time.utc(yy, mm, 0)
+                {:year => yy}
+		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
+                {:year => yy, :day => dd}
 		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-
+                {:month => mm}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
+                {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
+                {:day => dd}
 		}
-    time	= seq(hour, minute, second, zone._?) |
-	    	seq(hour, minute, zone._?) |
-    		seq(hour, zone._?) |
-	    	seq('-', minute, second, zone._?) |
-	    	seq('-', minute, zone._?) |
-	    	seq('-', '-', second, zone._?) 
-    date_and_or_time = date_time | date | seq("T", time)
+    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq(hour, minute, zone._?) {|h, m, z|
+                h = {:hour => h, :min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } |	seq(hour, zone._?) {|h, z|
+                h = {:hour => h}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, second, zone._?) {|m, s, z|
+                h = {:min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', minute, zone._?) {|m, z|
+                h = {:min => m}
+                h[:zone] = z[0] unless z.empty?
+                h
+            } | seq('-', '-', second, zone._?) {|s, z|
+                h = {:sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h
+            }
+    date_and_or_time = date_time | date | seq("T", time).map {|_, t| t }
      date_and_or_time.eof
   end
   
   def utc_offset
-    sign	    = /[+-]/i.r
-    utc_offset 	= seq(sign, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?)
-    utc_offset.eof
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
+                    h = {:sign => s, :hour => h, :min => m}
+                    h[:sec] = s[0] unless s.empty?
+                    h
+            }
   end
 
   def kindvalue
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
-    xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
 	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r |
-		  	ianaToken | xname
+		  	C::IANATOKEN | C::XNAME
 	  kindvlaue.eof
   end
 
   def fivepartname
     text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    component	= text.map {|t| [t] }| 
-	    	seq(text, ',', lazy{component}) {|a, _, b|
+    component	=  
+	    	seq(C::TEXT, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		}
+		} | C::TEXT.map {|t| [t] }
     fivepartname = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
@@ -241,11 +352,10 @@ module Vcard::V4_0
   end
 
   def address
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
-    component	= text.map {|t| [t] }| 
-	    	seq(text, ',', lazy{component}) {|a, _, b|
+    component	=  
+	    	seq(C::TEXT, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		}
+		} | C::TEXT.map {|t| [t] }
     address = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
@@ -262,7 +372,7 @@ module Vcard::V4_0
   end
 
   def gender
-	  gender = seq(/[MFONU]/.r._?, text._?) { |sex, gender|
+	  gender = seq(/[MFONU]/.r._?, C::TEXT._?) { |sex, gender|
 		  		sex = sex[0] unless sex.empty?
 		  		gender = gender[0] unless gender.empty?
 		  		{:sex => sex, :gender => gender}
@@ -271,10 +381,8 @@ module Vcard::V4_0
   end
 
   def typeparamtel1list
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
-    xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
     typeparamtel1	= /TEXT/i.r | /VOICE/i.r | /FAX/i.r | /CELL/i.r | /VIDEO/i.r |
-	    		/PAGER/i.r | /TEXTPHONE/i.r | ianaToken | xname
+	    		/PAGER/i.r | /TEXTPHONE/i.r | C::IANATOKEN | C::XNAME
     typeparamtel1list = typeparamtel1.map {|t| [t] } | seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
 	    			[a, b].flatten
 			}
@@ -418,74 +526,6 @@ module Vcard::V4_0
     return ret
   end
 
-   def paramcheck(prop, params) 
-           if params and params[:TYPE]
-		   case prop
-		   when :FN, :NICKNAME, :PHOTO, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
-		   else
-                   	parse_err(":TYPE parameter given for #{prop}") 
-		   end
-           end
-	   if params and params[:MEDIATYPE]
-		   case prop
-		   when :SOURCE, :PHOTO, :IMPP, :GEO, :LOGO, :MEMBER, :SOUND, :URL, :FBURL, :CALADRURI, :CALURI, :TEL, :RELATED, :UID, :KEY, :TZ
-		   else
-                   	parse_err(":MEDIATYPE parameter given for #{prop}") 
-		   end
-	   end
-	   if params and params[:CALSCALE]
-		   case prop
-		   when :BDAY, :ANNIVERSARY
-		   else
-                   	parse_err(":CALSCALE parameter given for #{prop}") 
-		   end
-	   end
-	   if params and params[:GEO]
-		   case prop
-		   when :ADR
-		   else
-                   	parse_err(":GEO parameter given for #{prop}") 
-		   end
-	   end
-	   if params and params[:TZ]
-		   case prop
-		   when :ADR
-		   else
-                   	parse_err(":TZ parameter given for #{prop}") 
-		   end
-	   end
-           case prop
-	           when :SOURCE, :PHOTO, :IMPP, :GEO, :LOGO, :MEMBER, :SOUND, :URL, :FBURL, :CALADRURI, :CALURI
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "uri"
-	                   }
-	           when :LANG
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "language-tag"
-	                   }
-	           when :REV
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "timestamp"
-	                   }
-	           when :KIND, :XML, :FN, :N, :NICKNAME, :GENDER, :ADR, :EMAIL, :TITLE, :ROLE, :ORG, :CATEGORIES, :NOTE, :PRODID, :VERSION
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "text"
-	                   }
-	           when :BDAY, :ANNIVERSARY
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "date-and-or-time" and val != "text"
-	                   }
-	           when :TEL, :RELATED, :UID, :KEY
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "uri" and val != "text"
-	                   }
-	           when :TZ
-	                   params.each {|key, val|
-	                           parse_err("illegal value #{val} given for parameter #{key} of #{prop}") if key == :VALUE and val != "uri" and val != "text" and val != "utc-offset"
-	                   }
-		   else
-		  end
-    end
 
 
 private

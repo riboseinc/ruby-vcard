@@ -7,8 +7,8 @@ include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
 require 'vobject/component'
-require_relative "../c"
-require_relative "../error"
+require_relative "../../c"
+require_relative "../../error"
 
 module Vcard::V3_0
 	class Grammar
