@@ -62,6 +62,7 @@ module Vcard::V3_0
 			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
 			ret
 		}
+    typevaluelist = pvalueList
     quotedStringList = (seq(C::QUOTEDSTRING, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
                          ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")
                          ret
@@ -79,12 +80,12 @@ module Vcard::V3_0
 
     param 	= seq(/ENCODING/i.r, '=', /b/.r) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
-    		} | seq(/LANGUAGE/i.r, '=', rfc1766langvalue) {|name, _, val|
+    		} | seq(/LANGUAGE/i.r, '=', rfc1766language) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(/CONTEXT/i.r, '=', /word/.r) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
-			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
+			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/VALUE/i.r, '=', valuetype) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
     		} | seq(otherparamname, '=', pvalueList) {|name, _, val|
@@ -94,7 +95,7 @@ module Vcard::V3_0
 			parse_err("Violated format of parameter value #{name} = #{val}")
 		}
 
-    params	= seq(';'.r >> param, lazy{params} ) {|p, ps|
+    params	= seq(';'.r >> param & ';', lazy{params} ) {|p, ps|
 			p.merge(ps) {|key, old, new|
 				if @cardinality1[:PARAM].include?(key)
 						parse_err("Violated cardinality of parameter #{key}")
@@ -102,18 +103,16 @@ module Vcard::V3_0
 				[old,  new].flatten
 				# deal with duplicate properties
 			}
-		} |  seq(';'.r >> param ^ ';'.r).map {|e|
-			e[0]
-    		}
+		} |  seq(';'.r >> param ).map {|e| e[0] }
 
     value 	= valueChar.star.map(&:join)
     contentline = seq(linegroup._?, C::NAME, params._?, ':', 
-		      C::VALUE, /[\r\n]/) {|group, name, params, _, value, _|
+		      C::VALUE, /(\r|\n|\r\n)/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym
 			hash = { key => {} }
-			hash[key][:value] = typematch(key, params[0], :GENERIC, value, @ctx)
+			hash[key][:value] = Typegrammars.typematch(key, params[0], :GENERIC, value, @ctx)
 			hash[key][:group] = group[0]  unless group.empty?
-			paramcheck(key, params.empty? ? {} : params[0], @ctx)
+			Paramcheck.paramcheck(key, params.empty? ? {} : params[0], @ctx)
 			hash[key][:params] = params[0] unless params.empty?
 			# TODO restrictions on params
 			hash
@@ -134,7 +133,7 @@ module Vcard::V3_0
 	calprop     = seq(linegroup._?, calpropname, ':', C::VALUE, 	/[\r\n]/) {|group, key, _, value, _|
 	    		key = key.upcase.gsub(/-/,"_").to_sym
 	    		hash = { key => {} }
-			hash[key][:value] = typematch(key, nil, :VCARD, value, @ctx)
+			hash[key][:value] = Typegrammars.typematch(key, nil, :VCARD, value, @ctx)
 			hash[key][:group] = group[0]  unless group.empty?
 			hash
 	}

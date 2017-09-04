@@ -24,6 +24,10 @@ class Component < Vobject::Component
 
   end
 
+    def encode version
+	              return self.to_s
+		        end
+
   private
 
   def property_base_class

@@ -4,11 +4,11 @@ require "uri"
 require "date"
 require "tzinfo"
 include Rsec::Helpers
-require_relative "../c"
-require_relative "../error"
+require_relative "../../c"
+require_relative "../../error"
 require 'vobject' 
 
-module Vobject
+module Vcard::V3_0
  class Typegrammars
         
     class << self

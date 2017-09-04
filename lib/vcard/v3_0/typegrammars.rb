@@ -5,6 +5,7 @@ require "date"
 #require "tzinfo"
 include Rsec::Helpers
 require 'vcard/version'
+require_relative "./propertyparent"
 require 'vobject'
 
 module Vcard::V3_0
@@ -228,7 +229,7 @@ module Vcard::V3_0
 	    		a = a[0] if a.length == 1
 	    		b = b[0] if b.length == 1
 	    		{:surname => a, :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
-	    	} | component {|a|
+	    	} | component.map {|a|
 	    		a = a[0] if a.length == 1
 	    		{:surname => '', :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
 	    	} 
@@ -297,6 +298,17 @@ module Vcard::V3_0
     address.eof
   end
 
+    def registered_propname
+	        registered_propname = C::NAME
+		    registered_propname.eof
+		      end
+
+      def is_registered_propname?(x)
+	          p = registered_propname.parse(x)
+		      return not(Rsec::INVALID[p])
+		        end
+
+
 
   # Enforce type restrictions on values of particular properties.
   # If successful, return typed interpretation of string
@@ -309,7 +321,7 @@ module Vcard::V3_0
      when :SOURCE, :URL
 	    ret = uri._parse ctx1
      when :NAME, :FN, :NICKNAME, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
-	    ret = text._parse ctx1
+	    ret = textT._parse ctx1
      when :CLASS
 	    ret = classvalue._parse ctx1
      when :ORG, :CATEGORIES
@@ -328,7 +340,7 @@ module Vcard::V3_0
 	     if params and params[:ENCODING] == 'b'
 		     ret = binary._parse ctx1
 	     else
-		     ret = text._parse ctx1
+		     ret = textT._parse ctx1
 	     end
      when :BDAY
 	     if params and params[:VALUE] == 'date-time'

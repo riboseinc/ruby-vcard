@@ -16,7 +16,7 @@ module Vcard::V3_0
 
   def paramcheck(prop, params, ctx) 
 	if params and params[:TYPE]
-		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and prop != :EMAIL and prop != :ADR and prop != :TEL
+		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and params[:TYPE].length > 1 and prop != :EMAIL and prop != :ADR and prop != :TEL
 	end
 	case prop
 	when :NAME, :PROFILE, :TZ, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
@@ -62,7 +62,7 @@ module Vcard::V3_0
 		}
 		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}", ctx) if params[:VALUE] and params[:VALUE] != "binary" and params[:VALUE] != "uri"
 		parse_err("illegal value #{params[:ENCODING]} of :ENCODING given for #{prop}", ctx) if params[:ENCODING] and (params[:ENCODING] != "b" or params[:VALUE] == "uri")
-		parse_err("mandatory parameter of :ENCODING missing for #{prop}", ctx) if !params.key(:ENCODING) and (!params.key?(:VALUE) or params[:VALUE] == "binary")
+		parse_err("mandatory parameter of :ENCODING missing for #{prop}", ctx) if !params.has_key?(:ENCODING) and (!params.key?(:VALUE) or params[:VALUE] == "binary")
 		# TODO restriction of :TYPE to image types registered with IANA
 		# TODO restriction of :TYPE to sound types registered with IANA
 	when :BDAY, :REV

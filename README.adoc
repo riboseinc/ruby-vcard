@@ -16,6 +16,17 @@ gem 'vcard'
 
 == Usage
 
+Vobject.parse("<ics/vcf file>")
+
+* Components, properties, and parameters are all objects.
+  * Each type of component is a distinct object.
+* The parameters of a property are represented as an array of parameter objects.
+* If a property has multiple values, given on separate lines, they are represented
+as an array of value properties. Each value hash may have its own parameters.
+* The values of properties are native Ruby types wherever possible
+(hashes, dates, integers, doubles).
+
+
 vCard example:
 ```
 BEGIN:VCARD
@@ -145,6 +156,21 @@ converts to:
     @prop_name=:CLIENTPIDMAP>],
  @comp_name=:VCARD>
 ```
+
+## Implementation
+
+This gem is implemented using [Rsec](https://github.com/luikore/rsec), a very fast PEG grammar based on StringScanner.
+
+## Coverage
+
+This tool is intended as a reference implementation, and it is very strict in its conformance: it requires all rules for parameter coocurrence,
+property typing, parameter typing, permitted properties within components, etc to be met by objects.
+
+The tool only parses one object at a time, and does not parse Vobject streams.
+
+This tool supports v3.0 vCard as specified in RFC 2425 and RFC 2426, and as updated in RFC 4770 (extensions for Instant Messaging)
+
+This tool supports v4.0 vCard as specified in RFC 6350, and as updated in RFC 
 
 
 == Development
