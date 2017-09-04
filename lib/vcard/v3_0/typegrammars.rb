@@ -24,7 +24,8 @@ module Vcard::V3_0
 
   def phoneNumber 
 	  # This is on the lax side; there should be up to 15 digits
-	  phoneNumber = /[0-9() +-]+/.r
+	  # Will allow letters
+	  phoneNumber = /[0-9() +A-Z-]+/i.r
 	  phoneNumber.eof
   end
 
@@ -87,6 +88,14 @@ module Vcard::V3_0
 	    	seq(text, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
 	    	text.map {|t| [t]}
     textlist.eof
+  end
+
+  def org
+    text	= C::TEXT
+    org	= 
+	    	seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
+	    	text.map {|t| [t]}
+    org.eof
   end
 
   def dateT
@@ -290,7 +299,7 @@ module Vcard::V3_0
 	    		b = b[0] if b.length == 1
 	    		{:pobox => a, :ext => b, :street => '', 
 				:locality => '', :region => '', :code => '', :country => ''}
-	    	} | component {|a|
+	    	} | component.map {|a|
 	    		a = a[0] if a.length == 1
 	    		{:pobox => a, :ext => '', :street => '', 
 				:locality => '', :region => '', :code => '', :country => ''}
@@ -318,14 +327,16 @@ module Vcard::V3_0
     case key
      when :VERSION
 	    ret = versionvalue._parse ctx1
-     when :SOURCE, :URL
+     when :SOURCE, :URL, :IMPP
 	    ret = uri._parse ctx1
      when :NAME, :FN, :NICKNAME, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
 	    ret = textT._parse ctx1
      when :CLASS
 	    ret = classvalue._parse ctx1
-     when :ORG, :CATEGORIES
+     when :CATEGORIES
 	    ret = textlist._parse ctx1
+     when :ORG
+	    ret = org._parse ctx1
      when :PROFILE
 	    ret = profilevalue._parse ctx1
      when :N

@@ -42,7 +42,27 @@ describe Vcard do
       expect(vobj_json).to include_json(exp_json)
   end
 
-  it 'should process RFC6868 caret parameters' do
+  it 'should reject TYPE on iana-token property' do
+      ics = File.read "spec/examples/apple1.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end 
+
+  it 'should reject URL without http prefix per RFC 1738' do
+      ics = File.read "spec/examples/apple2.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end 
+
+  it 'should reject type parameters on URL' do
+      ics = File.read "spec/examples/apple3.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end 
+
+  it 'should reject X-parameters on IMPP' do
+      ics = File.read "spec/examples/apple4.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end 
+
+  it 'should process VCF from Apple' do
       ics = File.read "spec/examples/ujb.vcf"
       vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
       exp_json = JSON.load(File.read "spec/examples/ujb.json")
@@ -51,6 +71,11 @@ describe Vcard do
 
   it 'should reject CHARSET parameter' do
       ics = File.read "spec/examples/ujb1.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end
+
+  it 'should reject TYPE parameter on X-property' do
+      ics = File.read "spec/examples/ujb2.vcf"
       expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
   end
 

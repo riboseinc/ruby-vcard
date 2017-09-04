@@ -16,7 +16,7 @@ module Vcard::V3_0
 
   def paramcheck(prop, params, ctx) 
 	if params and params[:TYPE]
-		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and params[:TYPE].length > 1 and prop != :EMAIL and prop != :ADR and prop != :TEL
+		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and params[:TYPE].length > 1 and prop != :EMAIL and prop != :ADR and prop != :TEL and prop != :LABEL and prop != :IMPP
 	end
 	case prop
 	when :NAME, :PROFILE, :TZ, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
@@ -32,7 +32,7 @@ module Vcard::V3_0
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
 			parse_err("illegal value #{val} given for parameter #{key} of #{prop}", ctx) if key == :VALUE and val != "ptext"
 		}
-	when :TEL
+	when :TEL, :IMPP
 		params.each {|key, val|
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE
 		}
@@ -42,9 +42,11 @@ module Vcard::V3_0
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE
 		}
 		# we do not check the values of the first :EMAIL :TYPE parameter, because they include ianaToken
+=begin
 		if params[:TYPE].length > 1
 			parse_err("illegal second parameter #{params[:TYPE][1]} given for #{prop}", ctx) unless params[:TYPE][1] == 'PREF'
 		end
+=end
 	when :ADR, :LABEL
 		params.each {|key, val|
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i or key == :TYPE
