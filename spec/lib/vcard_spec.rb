@@ -79,5 +79,28 @@ describe Vcard do
       expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
   end
 
+  it 'should reject VCF with FN but no N' do
+      ics = File.read "spec/examples/example51.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end
+
+  it 'should reject VCF with FN but no N' do
+      ics = File.read "spec/examples/example61.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end
+
+  it 'should process VCF from Apple' do
+      ics = File.read "spec/examples/example5.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/example5.json")
+      expect(vobj_json).to include_json(exp_json)
+  end
+
+  it 'should process VCF from Apple' do
+      ics = File.read "spec/examples/example6.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/example6.json")
+      expect(vobj_json).to include_json(exp_json)
+  end
 
 end
