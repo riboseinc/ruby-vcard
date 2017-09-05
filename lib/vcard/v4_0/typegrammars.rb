@@ -66,14 +66,14 @@ module Vcard::V4_0
   def dateT
      dateT	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
 		    {:year => yy, :month => mm, :day => dd}
-        } | /[0-9]{4}/.r {|yy|
-			{:year => yy }
 		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
 			{:year => yy, :day => dd }
-		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-            {:month => mm}
+        } | /[0-9]{4}/.r {|yy|
+			{:year => yy }
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
 		    {:month => mm, :day => dd}
+		} | seq('--', /[0-9]{2}/.r) {|_, mm|
+            {:month => mm}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
 		    {:day => dd}
 		}
@@ -234,14 +234,14 @@ module Vcard::V4_0
 	     	}
      date	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
                 {:year => yy, :month => mm, :day => dd}
-	     	} | /[0-9]{4}/.r {|yy|
-                {:year => yy}
 		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
                 {:year => yy, :day => dd}
-		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-                {:month => mm}
+	     	} | /[0-9]{4}/.r {|yy|
+                {:year => yy}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
                 {:month => mm, :day => dd}
+		} | seq('--', /[0-9]{2}/.r) {|_, mm|
+                {:month => mm}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
                 {:day => dd}
 		}
@@ -325,13 +325,23 @@ module Vcard::V4_0
   end
 
   def gender
-	  gender = seq(/[MFONU]/.r._?, C::TEXT._?) { |sex, gender|
+	  gender = seq(/[MFONU]/.r._?, ';', C::TEXT) {|sex, _, gender|
 		  		sex = sex[0] unless sex.empty?
-		  		gender = gender[0] unless gender.empty?
 		  		{:sex => sex, :gender => gender}
-	  		}
+			} | /[MFONU]/.r.map { |sex|
+				{:sex => sex, :gender => ''}
+			}
 	  gender.eof
   end
+
+   def org
+       text        = C::TEXT
+       org =
+                 seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
+                  text.map {|t| [t]}
+       org.eof
+   end
+
 
   def typeparamtel1list
     typeparamtel1	= /TEXT/i.r | /VOICE/i.r | /FAX/i.r | /CELL/i.r | /VIDEO/i.r |
@@ -348,7 +358,7 @@ module Vcard::V4_0
                               /CHILD/i.r | /PARENT/i.r | /SIBLING/i.r | /SPOUSE/i.r | /KIN/i.r |
                               /MUSE/i.r | /CRUSH/i.r | /DATE/i.r | /SWEETHEART/i.r | /ME/i.r |
                               /AGENT/i.r | /EMERGENCY/i.r
-      typerelatedlist	= typeparamrelated {|t| [t] } | seq(typeparamrelated, ';', lazy{typerelatedlist}) {|a, _, b|
+      typerelatedlist	= typeparamrelated.map {|t| [t] } | seq(typeparamrelated, ';', lazy{typerelatedlist}) {|a, _, b|
 	      			[a, b].flatten
 			}
       typerelatedlist.eof
@@ -367,8 +377,10 @@ module Vcard::V4_0
 	    ret = kindvalue._parse ctx1
      when :XML, :FN, :EMAIL, :TITLE, :ROLE, :NOTE
 	    ret = textT._parse ctx1
-     when :NICKNAME, :ORG, :CATEGORIES
+     when :NICKNAME, :CATEGORIES
 	    ret = textlist._parse ctx1
+     when :ORG
+	    ret = org._parse ctx1
      when :N
 	    ret = fivepartname._parse ctx1
      when :ADR
@@ -381,7 +393,7 @@ module Vcard::V4_0
 		    end
 		    ret = textT._parse ctx1
 	    else
-		    if params[:CALSCALE] and /^T/ =~ value
+		    if params and params[:CALSCALE] and /^T/ =~ value
 		        STDERR.puts "Specified CALSCALE within property #{key} as time"
 		        raise ctx1.generate_error 'source'
 		    end
@@ -389,10 +401,11 @@ module Vcard::V4_0
 	    end
     when :TEL
 	    if params and params[:TYPE]
-		    ret1 = typeparamtel1list.parse params[:type]
-		    if ret1 or Rsec::INVALID[ret1]
+		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(';') : params[:TYPE]
+		    ret1 = typeparamtel1list.parse typestr
+		    if !ret1 or Rsec::INVALID[ret1]
 		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
-	      		raise @ctx.generate_error 'source'
+	      		raise ctx1.generate_error 'source'
 		    end
 	    end
 	    if params and params[:VALUE] == 'uri'
@@ -402,20 +415,21 @@ module Vcard::V4_0
 	    end
      when :RELATED
 	    if params and params[:TYPE]
-		    ret1 = typerelatedlist.parse params[:type]
-		    if ret1 or Rsec::INVALID[ret1]
+		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(';') : params[:TYPE]
+		    ret1 = typerelatedlist.parse typestr
+		    if !ret1 or Rsec::INVALID[ret1]
 		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
-	      		raise @ctx.generate_error 'source'
+	      		raise ctx1.generate_error 'source'
 		    end
 	    end
 	    if params and params[:VALUE] == 'uri'
 		    ret = uri._parse ctx1
 	    else
-		    ret = text._parse ctx1
+		    ret = textT._parse ctx1
 	    end
      when :UID, :KEY
 	    if params and params[:VALUE] == 'text'
-		    ret = text._parse ctx1
+		    ret = textT._parse ctx1
 	    else
 		    ret = uri._parse ctx1
 	    end
@@ -429,7 +443,7 @@ module Vcard::V4_0
 	     elsif params and params[:VALUE] == 'utc_offset'
 	    	ret = utc_offset._parse ctx1
 	     else
-	    	ret = text._parse ctx1
+	    	ret = textT._parse ctx1
 	     end
       when :REV
 	      ret = timestamp._parse ctx1

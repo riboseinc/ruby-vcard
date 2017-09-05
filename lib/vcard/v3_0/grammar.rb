@@ -51,11 +51,17 @@ module Vcard::V3_0
     valuetype 	= /URI/i.r | /DATE/i.r | /DATE-TIME/i.r | /BINARY/i.r | /PTEXT/i.r  
     mediaattr	= /[!\"#$%&'*+.^A-Z0-9a-z_`i{}|~-]+/.r
     mediavalue	=	mediaattr | C::QUOTEDSTRING
-    mediatail	= seq(';', mediaattr, '=', mediavalue)
+    mediatail   = seq(';', mediaattr, '=', mediavalue).map {|_, a, _, v|
+	                       ";#{a}=#{v}"
+	               }
     rfc4288regname      = /[A-Za-z0-9!#$&.+^+-]{1,127}/.r
     rfc4288typename     = rfc4288regname
     rfc4288subtypename  = rfc4288regname
-    mediavalue	= seq(rfc4288typename, "/", rfc4288subtypename, mediatail.star)
+    mediavalue	= seq(rfc4288typename, "/", rfc4288subtypename, mediatail.star).map {|t, _, s, tail|
+	                  ret = "#{t}/#{s}"
+	                  ret = ret . tail[0] unless tail.empty?
+	                  ret
+                  }
     pvalueList 	= (paramvalue & /[;:]/.r).map {|e| 
 	    		[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
     		} | (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|

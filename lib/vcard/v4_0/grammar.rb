@@ -80,11 +80,17 @@ module Vcard::V4_0
 		/LANGUAGE-TAG/i.r | C::IANATOKEN | C::XNAME
     mediaattr	= /[!\"#$%&'*+.^A-Z0-9a-z_`i{}|~-]+/.r
     mediavalue	=	mediaattr | C::QUOTEDSTRING
-    mediatail	= seq(';', mediaattr, '=', mediavalue)
+    mediatail	= seq(';', mediaattr, '=', mediavalue).map {|_, a, _, v|
+	    		";#{a}=#{v}"
+	    	}
     rfc4288regname      = /[A-Za-z0-9!#$&.+^+-]{1,127}/.r
     rfc4288typename     = rfc4288regname
     rfc4288subtypename  = rfc4288regname
-    mediavalue	= seq(rfc4288typename, "/", rfc4288subtypename, mediatail.star)
+    mediavalue	= seq(rfc4288typename, "/", rfc4288subtypename, mediatail.star).map {|t, _, s, tail|
+	    			ret = "#{t}/#{s}"
+				ret = ret . tail[0] unless tail.empty?
+				ret
+	    		}
     pvalueList 	=  (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
 			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
 			ret
@@ -107,7 +113,7 @@ module Vcard::V4_0
     		} | seq(/PREF/i.r, '=', prefvalue) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
-			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
+			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/MEDIATYPE/i.r, '=', mediavalue) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/CALSCALE/i.r, '=', calscalevalue) {|name, _, val|
