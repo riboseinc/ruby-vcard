@@ -56,7 +56,7 @@
        "hour":"22",
        "min":"27",
        "sec":"10",
-       "zone":{"zone":"Z"}}},
+       "zone":"Z"}},
    "ROLE":{"value":"Project Leader"},
    "SOUND":
     {"value":"CID:JOHNQPUBLIC.part8.19960229T080000.xyzMail@example.com"},

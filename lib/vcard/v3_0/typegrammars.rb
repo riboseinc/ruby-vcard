@@ -99,105 +99,85 @@ module Vcard::V3_0
   end
 
   def dateT
-     dateT	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+     dateT	= seq(/[0-9]{4}/.r, /-/.r._?, /[0-9]{2}/.r, /-/.r._?, /[0-9]{2}/.r) {|yy, _, mm, _, dd|
 		    {:year => yy, :month => mm, :day => dd}
-        } | /[0-9]{4}/.r {|yy|
-			{:year => yy }
-		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
-			{:year => yy, :day => dd }
-		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-            {:month => mm}
-		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		    {:month => mm, :day => dd}
-		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		    {:day => dd}
-		}
+        } 
      dateT.eof
   end
 
   def timeT	
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {|s, h, m, z|
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = z[0] unless s.empty?
-                    h
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+                    {:sign => s, :hour => h, :min => m}
                 }
     zone	= utc_offset.map {|u| {:zone => u } } | 
                     /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    secfrac	= seq(','.r >> /[0-9]+/)
+    time	= seq(hour, /:/._?, minute, /:/._?, second, secfrac._?, zone._?) {|h, _, m, _, s, f, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
+                h[:secfrac] = f[0] unless f.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
-                h = {:hour => h, :min => m}
-                h[:zone] = z[0] unless z.empty?
-                h
-            } |	seq(hour, zone._?) {|h, z|
-                h = {:hour => h}
-                h[:zone] = z[0] unless z.empty?
-                h
-            } | seq('-', minute, second, zone._?) {|m, s, z|
-                h = {:min => m, :sec => s}
-                h[:zone] = z[0] unless z.empty?
-                h
-            } | seq('-', minute, zone._?) {|m, z|
-                h = {:min => m}
-                h[:zone] = z[0] unless z.empty?
-                h
-            } | seq('-', '-', second, zone._?) {|s, z|
-                h = {:sec => s}
-                h[:zone] = z[0] unless z.empty?
-                h
-            }
+            } 
     timeT.eof
   end
 
   def date_time
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {
-                    h = {:sign => s, :hour => h, :min => m}
-                    h[:sec] = s[0] unless s.empty?
-                    h
-            }
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+                    {:sign => s, :hour => h, :min => m}
+                }
     zone	= utc_offset.map {|u| {:zone => u } } | 
                     /Z/i.r.map {|z| {:zone => 'Z'} }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time_notrunc	= seq(hour, minute, second, zone._?) {|h, m, s, z|
+    secfrac	= seq(','.r >> /[0-9]+/)
+     date	= seq(/[0-9]{4}/.r, /-/.r._?, /[0-9]{2}/.r, /-/.r._?, /[0-9]{2}/.r) {|yy, _, mm, _, dd|
+		    {:year => yy, :month => mm, :day => dd}
+        } 
+    time	= seq(hour, /:/.r._?, minute, /:/.r._?, second, secfrac._?, zone._?) {|h, _, m, _, s, f, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
+                h[:secfrac] = f[0] unless f.empty?
                 h
-            } | seq(hour, minute, zone._?) {|h, m, z|
-                h = {:hour => h, :min => m}
-                h[:zone] = z[0] unless z.empty?
-                h
-	    	} | seq(hour, zone._?) {|h, z|
-                h = {:hour => h}
-                h[:zone] = z[0] unless z.empty?
-                h
-	    	}
-     date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
-            {:year => yy, :month => mm, :day => dd}
-        } |
-		seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		    {:month => mm, :date => dd}
-		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		    {:date => dd}
-		}
-     date_time	= seq(date_noreduc, 'T', time_notrunc) {|d, _, t|
+            } 
+     date_time	= seq(date, 'T', time) {|d, _, t|
                 d.merge t
 	     	}
      date_time.eof
   end
 
+  def date_or_date_time
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+                    {:sign => s, :hour => h, :min => m}
+                }
+    zone	= utc_offset.map {|u| {:zone => u } } | 
+                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    hour	= /[0-9]{2}/.r
+    minute	= /[0-9]{2}/.r
+    second	= /[0-9]{2}/.r
+    secfrac	= seq(','.r >> /[0-9]+/)
+     date	= seq(/[0-9]{4}/.r, /-/.r._?, /[0-9]{2}/.r, /-/.r._?, /[0-9]{2}/.r) {|yy, _, mm, _, dd|
+		    {:year => yy, :month => mm, :day => dd}
+        } 
+    time	= seq(hour, /:/.r._?, minute, /:/.r._?, second, secfrac._?, zone._?) {|h, _, m, _, s, f, z|
+                h = {:hour => h, :min => m, :sec => s}
+                h[:zone] = z[0] unless z.empty?
+                h[:secfrac] = f[0] unless f.empty?
+                h
+            } 
+     date_or_date_time	= seq(date, 'T', time) {|d, _, t|
+                d.merge t
+	     	} | date
+     date_or_date_time.eof
+  end
+
   def utc_offset
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r) {|sign, h, m, sec|
-	    		hash = {:sign => sign, :hr => h, :min => m }
-			hash[:sec] = sec[0] unless sec.empty?
-			hash
-    		}
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+                    {:sign => s, :hour => h, :min => m}
+                }
     utc_offset.eof
   end
 
@@ -322,6 +302,7 @@ module Vcard::V3_0
   # Enforce type restrictions on values of particular properties.
   # If successful, return typed interpretation of string
   def typematch(key, params, component, value, ctx)
+    params[:VALUE] = params[:VALUE].downcase if params and params[:VALUE]
     property_parent(key, component, value, ctx)
     ctx1 = Rsec::ParseContext.new value, 'source'
     case key
@@ -329,11 +310,11 @@ module Vcard::V3_0
 	    ret = versionvalue._parse ctx1
      when :SOURCE, :URL, :IMPP
 	    ret = uri._parse ctx1
-     when :NAME, :FN, :NICKNAME, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
+     when :NAME, :FN, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
 	    ret = textT._parse ctx1
      when :CLASS
 	    ret = classvalue._parse ctx1
-     when :CATEGORIES
+     when :CATEGORIES, :NICKNAME
 	    ret = textlist._parse ctx1
      when :ORG
 	    ret = org._parse ctx1
@@ -356,28 +337,40 @@ module Vcard::V3_0
      when :BDAY
 	     if params and params[:VALUE] == 'date-time'
 		     ret = date_time._parse ctx1
-	     else
+	     elsif params and params[:VALUE] == 'date'
 		     ret = dateT._parse ctx1
+	     else
+		     # unlike VCARD 4, can have either date or date_time without explicit value switch
+		     ret = date_or_date_time._parse ctx1
 	     end
      when :REV
 	     if params and params[:VALUE] == 'date'
 		     ret = dateT._parse ctx1
-	     else
+	     elsif params and params[:VALUE] == 'date-time'
 		     ret = date_time._parse ctx1
+	     else
+		     # unlike VCARD 4, can have either date or date_time without explicit value switch
+		     ret = date_or_date_time._parse ctx1
 	     end
      when :ADR
 	    ret = address._parse ctx1
     when :TEL
 	    ret = phoneNumber._parse ctx1
     when :TZ
-	    ret = utc_offset._parse ctx1
+	    puts params
+	    if params and params[:VALUE] == 'text'
+	    puts value
+	    	ret = textT._parse ctx1
+	    else
+	    	ret = utc_offset._parse ctx1
+	    end
     when :GEO
 	    ret = geovalue._parse ctx1
     when :AGENT
 	    if params and params[:VALUE] == 'uri'
 	    	ret = uri._parse ctx1
 	    else
-		ret = vcard._parse ctx1
+		ret = Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1
 	    end
     else
 	    ret = value

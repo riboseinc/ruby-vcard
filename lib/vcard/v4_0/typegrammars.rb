@@ -346,9 +346,9 @@ module Vcard::V4_0
   def typeparamtel1list
     typeparamtel1	= /TEXT/i.r | /VOICE/i.r | /FAX/i.r | /CELL/i.r | /VIDEO/i.r |
 	    		/PAGER/i.r | /TEXTPHONE/i.r | C::IANATOKEN | C::XNAME
-    typeparamtel1list = typeparamtel1.map {|t| [t] } | seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
+    typeparamtel1list = seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
 	    			[a, b].flatten
-			}
+			} | typeparamtel1.map {|t| [t] } 
     typeparamtel1list.eof
   end
 
@@ -358,9 +358,9 @@ module Vcard::V4_0
                               /CHILD/i.r | /PARENT/i.r | /SIBLING/i.r | /SPOUSE/i.r | /KIN/i.r |
                               /MUSE/i.r | /CRUSH/i.r | /DATE/i.r | /SWEETHEART/i.r | /ME/i.r |
                               /AGENT/i.r | /EMERGENCY/i.r
-      typerelatedlist	= typeparamrelated.map {|t| [t] } | seq(typeparamrelated, ';', lazy{typerelatedlist}) {|a, _, b|
+      typerelatedlist	= seq(typeparamrelated, ';', lazy{typerelatedlist}) {|a, _, b|
 	      			[a, b].flatten
-			}
+			} | typeparamrelated.map {|t| [t] } 
       typerelatedlist.eof
   end
 
@@ -401,10 +401,10 @@ module Vcard::V4_0
 	    end
     when :TEL
 	    if params and params[:TYPE]
-		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(';') : params[:TYPE]
+		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(',') : params[:TYPE]
 		    ret1 = typeparamtel1list.parse typestr
 		    if !ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
+		        STDERR.puts "Specified illegal TYPE parameter #{typestr} within property #{key}"
 	      		raise ctx1.generate_error 'source'
 		    end
 	    end
@@ -418,7 +418,7 @@ module Vcard::V4_0
 		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(';') : params[:TYPE]
 		    ret1 = typerelatedlist.parse typestr
 		    if !ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter within property #{key}"
+		        STDERR.puts "Specified illegal TYPE parameter #{typestr} within property #{key}"
 	      		raise ctx1.generate_error 'source'
 		    end
 	    end

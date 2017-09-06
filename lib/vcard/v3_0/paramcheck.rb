@@ -19,7 +19,7 @@ module Vcard::V3_0
 		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and params[:TYPE].length > 1 and prop != :EMAIL and prop != :ADR and prop != :TEL and prop != :LABEL and prop != :IMPP
 	end
 	case prop
-	when :NAME, :PROFILE, :TZ, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
+	when :NAME, :PROFILE, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
 		parse_err("illegal parameters #{params} given for #{prop}", ctx) unless params.empty?
 	when :SOURCE
 		params.each {|key, val|
@@ -77,6 +77,12 @@ module Vcard::V3_0
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE 
 		}
 		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}", ctx) if params[:VALUE] and params[:VALUE] != "uri"
+	when :TZ
+		# example in definition contradicts spec! Spec says :TZ takes no params at all
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE 
+		}
+		parse_err("illegal value #{params[:VALUE]} of :VALUE given for #{prop}", ctx) if params[:VALUE] and params[:VALUE] != "text"
 	else
 		params.each {|key, val|
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i

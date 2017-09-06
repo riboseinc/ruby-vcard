@@ -110,4 +110,18 @@ describe Vcard do
       expect(vobj_json).to include_json(exp_json)
     end
 
+    it 'should process VCF v4' do
+      ics = File.read "spec/examples/vcard4author.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/vcard4author.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+
+    it 'should process VCF v3' do
+      ics = File.read "spec/examples/vcard3.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/vcard4.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+
 end

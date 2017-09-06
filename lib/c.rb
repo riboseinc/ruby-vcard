@@ -116,11 +116,11 @@ module C
 
     UTC_OFFSET = seq(C::SIGN, /[0-9]{2}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r._?) {|s, h, m, z|
                         h = {:sign => s, :hour => h, :min => m}
-                        h[:sec] = z[0] unless s.empty?
+                        h[:sec] = z[0] unless z.empty?
                         h
 	                }
-        ZONE	= UTC_OFFSET.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
+        ZONE	= UTC_OFFSET.map {|u| u } | 
+                    /Z/i.r.map {|z| 'Z'}
 
 
 end
