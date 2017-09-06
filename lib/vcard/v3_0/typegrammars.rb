@@ -41,6 +41,8 @@ module Vcard::V3_0
 		
 
   def classvalue  
+    ianaToken 	= /[a-zA-Z\d\-]+/.r 
+    xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
     classvalue 	= /PUBLIC/i.r | /PRIVATE/i.r | /CONFIDENTIAL/i.r | ianaToken | xname
     classvalue.eof
   end
@@ -357,9 +359,7 @@ module Vcard::V3_0
     when :TEL
 	    ret = phoneNumber._parse ctx1
     when :TZ
-	    puts params
 	    if params and params[:VALUE] == 'text'
-	    puts value
 	    	ret = textT._parse ctx1
 	    else
 	    	ret = utc_offset._parse ctx1
@@ -370,6 +370,10 @@ module Vcard::V3_0
 	    if params and params[:VALUE] == 'uri'
 	    	ret = uri._parse ctx1
 	    else
+		# unescape
+		value = value.gsub(/\\n/,"\n").gsub(/\\;/,';').gsub(/\\,/,',').gsub(/\\:/,':')
+		value = value.gsub(/BEGIN:VCARD\n/, "BEGIN:VCARD\nVERSION:3.0\n") unless value =~ /\nVERSION:3\.0/
+    		ctx1 = Rsec::ParseContext.new value, 'source' 
 		ret = Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1
 	    end
     else

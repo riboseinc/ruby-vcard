@@ -120,7 +120,7 @@ describe Vcard do
     it 'should process VCF v3' do
       ics = File.read "spec/examples/vcard3.vcf"
       vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
-      exp_json = JSON.load(File.read "spec/examples/vcard4.json")
+      exp_json = JSON.load(File.read "spec/examples/vcard3.json")
       expect(vobj_json).to include_json(exp_json)
     end
 
