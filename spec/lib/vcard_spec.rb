@@ -3,7 +3,7 @@ require 'spec_helper'
 require 'json'
 require 'rsec'
 
-# Some examples taken from https://github.com/mozilla-comm/ical.js/
+# Some examples taken from https://github.com/mozilla-comm/ical.js/ , https://github.com/mangstadt/ez-vcard/
 
 describe Vcard do
 
@@ -140,5 +140,105 @@ describe Vcard do
       expect { Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
   end
 
+    it 'should reject TYPE param on X-name property' do
+      ics = File.read "spec/examples/John_Doe_EVOLUTION.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process EVOLUTION VCF v3' do
+      ics = File.read "spec/examples/John_Doe_EVOLUTION.1.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/John_Doe_EVOLUTION.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should reject unescaped comma in FN property, v3' do
+      ics = File.read "spec/examples/John_Doe_GMAIL.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should reject escaped colon in URI property, v3' do
+      ics = File.read "spec/examples/John_Doe_GMAIL.1.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should reject double quotation mark in NOTE value, escaped' do
+      ics = File.read "spec/examples/John_Doe_GMAIL.2.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process GMAIL VCF v3' do
+      ics = File.read "spec/examples/John_Doe_GMAIL.3.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/John_Doe_GMAIL.3.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process IPHONE VCF v3' do
+      ics = File.read "spec/examples/John_Doe_IPHONE.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r+\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/John_Doe_IPHONE.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should reject double quotation mark in NOTE value, unescaped' do
+      ics = File.read "spec/examples/John_Doe_LOTUS_NOTES.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should reject TZ value without sign and double digit hour' do
+      ics = File.read "spec/examples/John_Doe_LOTUS_NOTES.1.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should reject SOURCE value which is not URI' do
+      ics = File.read "spec/examples/John_Doe_LOTUS_NOTES.2.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process LOTUS VCF v3' do
+      ics = File.read "spec/examples/John_Doe_LOTUS_NOTES.3.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/John_Doe_LOTUS_NOTES.3.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should reject BASE64 parameter VCF v3' do
+      ics = File.read "spec/examples/John_Doe_MAC_ADDRESS_BOOK.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process MAC ADDRRESS BOOK VCF v3' do
+      ics = File.read "spec/examples/John_Doe_MAC_ADDRESS_BOOK.1.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r+\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/John_Doe_MAC_ADDRESS_BOOK.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process VCF v4' do
+      ics = File.read "spec/examples/fullcontact.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/fullcontact.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process GMAIL VCF v3' do
+      ics = File.read "spec/examples/gmail-single.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/gmail-single.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process GMAIL VCF v3' do
+      ics = File.read "spec/examples/gmail-single2.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/gmail-single2.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should reject obsolete CHARSET parameter VCF v3' do
+      ics = File.read "spec/examples/thunderbird-MoreFunctionsForAddressBook-extension.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process THUNDERBIRD VCF v3' do
+      ics = File.read "spec/examples/thunderbird-MoreFunctionsForAddressBook-extension.1.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/thunderbird-MoreFunctionsForAddressBook-extension.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should reject mispositioned VERSION property, v3' do
+      ics = File.read "spec/examples/stenerson.vcf"
+      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+    end
+    it 'should process  VCF v3' do
+      ics = File.read "spec/examples/stenerson.1.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/stenerson.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
 
 end
