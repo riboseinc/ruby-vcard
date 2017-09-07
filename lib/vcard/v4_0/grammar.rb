@@ -64,12 +64,12 @@ module Vcard::V4_0
 			/MUSE/i.r | /CRUSH/i.r | /DATE/i.r | /SWEETHEART/i.r | /ME/i.r |
 			/AGENT/i.r | /EMERGENCY/i.r
     typevalue	= /WORK/i.r | /HOME/i.r | typeparamtel1 | typeparamrelated | C::IANATOKEN | C::XNAME
-    typevaluelist =  seq(typevalue, ",", lazy{typevaluelist}) {|a, _, b|
-	    			[a, b].flatten
-			} | typevalue.map {|t| [t] }
+    typevaluelist =  	seq(typevalue, ",", lazy{typevaluelist}) {|a, _, b|
+	    			[a.upcase, b].flatten
+			} | typevalue.map {|t| [t.upcase] }
     typeparamtel1list =  seq(typeparamtel1, ",", lazy{typeparamtel1list}) {|a, _, b|
-	    			[a, b].flatten
-			} | typeparamtel1.map {|t| [t] }
+	    			[a.upcase, b].flatten
+			} | typeparamtel1.map {|t| [t.upcase] }
     geourlvalue = seq('"'.r >> C::TEXT << '"'.r) {|s|
 	                 	parse_err("geo value not a URI") unless s =~ URI::regexp 
 				s
@@ -92,14 +92,12 @@ module Vcard::V4_0
 				ret
 	    		}
     pvalueList 	=  (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
-			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
-			ret
+			[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") , list].flatten
 		} | (paramvalue & /[;:]/.r).map {|e| 
 	    		[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
     		}
     quotedStringList =  (seq(C::QUOTEDSTRING, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
-                         ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")
-                         ret
+                         [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n"), list].flatten
                 } | (C::QUOTEDSTRING & /[;:]/.r).map {|e|
                         [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
                 }
@@ -112,6 +110,11 @@ module Vcard::V4_0
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(/PREF/i.r, '=', prefvalue) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
+    		} | seq(/TYPE/i.r, '=', "\"".r >> typevaluelist << "\"".r) {|name, _, val|
+			# not in spec but in examples
+			{name.upcase.gsub(/-/,"_").to_sym => val}
+    		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
+			{name.upcase.gsub(/-/,"_").to_sym => val}
     		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/MEDIATYPE/i.r, '=', mediavalue) {|name, _, val|

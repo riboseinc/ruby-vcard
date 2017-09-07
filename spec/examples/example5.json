@@ -18,12 +18,12 @@
        "region":"NC",
        "code":"27613-3502",
        "country":"U.S.A."},
-     "params":{"TYPE":["WORK,POSTAL,PARCEL"]}},
+     "params":{"TYPE":["WORK","POSTAL","PARCEL"]}},
    "TEL":
-    [{"value":"+1-919-676-9515", "params":{"TYPE":["VOICE,MSG,WORK"]}},
-     {"value":"+1-919-676-9564", "params":{"TYPE":["FAX,WORK"]}}],
+    [{"value":"+1-919-676-9515", "params":{"TYPE":["VOICE","MSG","WORK"]}},
+     {"value":"+1-919-676-9564", "params":{"TYPE":["FAX","WORK"]}}],
    "EMAIL":
     [{"value":"Frank_Dawson@Lotus.com",
-      "params":{"TYPE":["INTERNET,PREF"]}},
+      "params":{"TYPE":["INTERNET","PREF"]}},
      {"value":"fdawson@earthlink.net", "params":{"TYPE":["INTERNET"]}}],
    "URL":{"value":"http://home.earthlink.net/~fdawson"}}}

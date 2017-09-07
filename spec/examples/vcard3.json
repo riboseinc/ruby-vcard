@@ -8,7 +8,7 @@
        "middlename":["Philip", "Paul"],
        "honprefix":"Dr.",
        "honsuffix":["Jr.", "M.D.", "A.C.P."]}},
-   "NICKNAME":[{"value":["Robbie"]}, {"value":["Jim", ","]}],
+   "NICKNAME":[{"value":["Robbie"]}, {"value":["Jim", "Jimmie"]}],
    "PHOTO":
     [{"value":"http://www.abc.com/pub/photos/jqpublic.gif",
       "params":{"VALUE":"uri"}},
@@ -22,7 +22,7 @@
        "hour":"08",
        "min":"30",
        "sec":"00",
-       "zone":{"zone":{"sign":"-", "hour":"06", "min":[":"]}}}},
+       "zone":{"sign":"-", "hour":"06", "min":"00"}}},
    "ADR":
     {"value":
       {"pobox":"",
@@ -32,20 +32,20 @@
        "region":"CA",
        "code":"91921-1234",
        "country":""},
-     "params":{"TYPE":["DOM,HOME,POSTAL,PARCEL"]}},
+     "params":{"TYPE":["DOM","HOME","POSTAL","PARCEL"]}},
    "LABEL":
     {"value":
       "Mr.John Q. Public\\, Esq.\\nMail Drop: TNE QB\\n123 Main Street\\nAny Town\\, CA  91921-1234\\nU.S.A.",
-     "params":{"TYPE":["DOM,HOME,POSTAL,PARCEL"]}},
+     "params":{"TYPE":["DOM","HOME","POSTAL","PARCEL"]}},
    "TEL":
-    {"value":"+1-213-555-1234", "params":{"TYPE":["WORK,VOICE,PREF,MSG"]}},
+    {"value":"+1-213-555-1234", "params":{"TYPE":["WORK","VOICE","PREF","MSG"]}},
    "EMAIL":
     [{"value":"jqpublic@xyz.dom1.com", "params":{"TYPE":["INTERNET"]}},
      {"value":"jdoe@isp.net", "params":{"TYPE":["INTERNET"]}},
-     {"value":"jane_doe@abc.com", "params":{"TYPE":["INTERNET,PREF"]}}],
+     {"value":"jane_doe@abc.com", "params":{"TYPE":["INTERNET","PREF"]}}],
    "MAILER":{"value":"PigeonMail 2.1"},
    "TZ":
-    [{"value":{"sign":"-", "hour":"05", "min":[":"]}},
+    [{"value":{"sign":"-", "hour":"05", "min":"00"}},
      {"value":
        "-05:00\\; EST\\; Raleigh/North America\\;This example has a single value\\, not a structure text value.",
       "params":{"VALUE":"text"}}],
@@ -75,7 +75,9 @@
           "EMAIL":
            {"value":"sthomas@host.com", "params":{"TYPE":["INTERNET"]}}}}}],
    "ORG":{"value":["ABC\\, Inc.", "North American Division", "Marketing"]},
-   "CATEGORIES":[{"value":["TRAVEL AGENT"]}, {"value":["INTERNET", ","]}],
+   "CATEGORIES":
+    [{"value":["TRAVEL AGENT"]},
+     {"value":["INTERNET", "IETF", "INDUSTRY", "INFORMATION TECHNOLOGY"]}],
    "NOTE":
     {"value":"This fax number is operational 0800 to 1715EST\\, Mon-Fri."},
    "PRODID":{"value":"-//ONLINE DIRECTORY//NONSGML Version 1//EN"},
@@ -87,7 +89,7 @@
        "hour":"22",
        "min":"27",
        "sec":"10",
-       "zone":{"zone":"Z"}}},
+       "zone":"Z"}},
    "SORT_STRING":{"value":"Harten"},
    "SOUND":
     [{"value":"CID:JOHNQPUBLIC.part8.19960229T080000.xyzMail@host1.com",

@@ -123,5 +123,22 @@ describe Vcard do
       exp_json = JSON.load(File.read "spec/examples/vcard3.json")
       expect(vobj_json).to include_json(exp_json)
     end
+    it 'should process VCF v3' do
+      ics = File.read "spec/examples/bubba.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/bubba.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process VCF v4' do
+      ics = File.read "spec/examples/bubba4.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/bubba4.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+  it 'should reject VCF4 with LABEL property' do
+      ics = File.read "spec/examples/example61.vcf"
+      expect { Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
+  end
+
 
 end

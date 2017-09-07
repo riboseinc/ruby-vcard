@@ -20,6 +20,6 @@
        "country":"U.S.A."},
      "params":{"TYPE":["WORK"]}},
    "TEL":
-    [{"value":"+1-415-937-3419", "params":{"TYPE":["VOICE,MSG,WORK"]}},
-     {"value":"+1-415-528-4164", "params":{"TYPE":["FAX,WORK"]}}],
+    [{"value":"+1-415-937-3419", "params":{"TYPE":["VOICE","MSG","WORK"]}},
+     {"value":"+1-415-528-4164", "params":{"TYPE":["FAX","WORK"]}}],
    "EMAIL":{"value":"howes@netscape.com", "params":{"TYPE":["INTERNET"]}}}}

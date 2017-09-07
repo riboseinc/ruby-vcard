@@ -87,7 +87,7 @@ module Vcard::V3_0
   def textlist
     text	= C::TEXT
     textlist	= 
-	    	seq(text, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
+	    	seq(text << ','.r, lazy{textlist}) { |a, b| [a, b].flatten } |
 	    	text.map {|t| [t]}
     textlist.eof
   end
@@ -108,11 +108,11 @@ module Vcard::V3_0
   end
 
   def timeT	
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, _, m|
                     {:sign => s, :hour => h, :min => m}
                 }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    zone	= utc_offset.map {|u| u  } | 
+                    /Z/i.r.map {|z| 'Z' }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
@@ -127,11 +127,11 @@ module Vcard::V3_0
   end
 
   def date_time
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, _, m|
                     {:sign => s, :hour => h, :min => m}
                 }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    zone	= utc_offset.map {|u| u  } | 
+                    /Z/i.r.map {|z| 'Z' }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
@@ -152,11 +152,11 @@ module Vcard::V3_0
   end
 
   def date_or_date_time
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, _, m|
                     {:sign => s, :hour => h, :min => m}
                 }
-    zone	= utc_offset.map {|u| {:zone => u } } | 
-                    /Z/i.r.map {|z| {:zone => 'Z'} }
+    zone	= utc_offset.map {|u| u  } | 
+                    /Z/i.r.map {|z| 'Z' }
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
@@ -177,7 +177,7 @@ module Vcard::V3_0
   end
 
   def utc_offset
-    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, m|
+    utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, _, m|
                     {:sign => s, :hour => h, :min => m}
                 }
     utc_offset.eof

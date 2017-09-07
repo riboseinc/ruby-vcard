@@ -62,16 +62,16 @@ module Vcard::V3_0
 	                  ret = ret . tail[0] unless tail.empty?
 	                  ret
                   }
-    pvalueList 	= (paramvalue & /[;:]/.r).map {|e| 
-	    		[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
-    		} | (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
-			ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") 
-			ret
-		}
-    typevaluelist = pvalueList
+    pvalueList 	=  (seq(paramvalue, ','.r, lazy{pvalueList}) & /[;:]/.r).map {|e, _, list|
+			[e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n") , list].flatten
+		} | (paramvalue & /[;:]/.r).map {|e|
+                        [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
+                }
+    typevaluelist = seq(C::IANATOKEN, ','.r >> lazy{typevaluelist}).map {|t, l|
+	    		[t.upcase, l].flatten
+    		} | C::IANATOKEN.map {|t| [t.upcase] }
     quotedStringList = (seq(C::QUOTEDSTRING, ','.r, lazy{quotedStringList}) & /[;:]/.r).map {|e, _, list|
-                         ret = list << e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")
-                         ret
+                         [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n"), list].flatten
                 } | (C::QUOTEDSTRING & /[;:]/.r).map {|e|
                         [e.sub(Regexp.new("^\"(.+)\"$"), '\1').gsub(/\\n/, "\n")]
                 }
