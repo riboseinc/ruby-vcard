@@ -43,7 +43,7 @@ module Vcard::V3_0
 
 
 # parameters and parameter types
-    paramname 		= /ENCODING/i.r | /LANGUAGE/i.r | /CONTEXT/i.r | /TYPE/i.r | /VALUE/i.r 
+    paramname 		= /ENCODING/i.r | /LANGUAGE/i.r | /CONTEXT/i.r | /TYPE/i.r | /VALUE/i.r | /PREF/i.r
     otherparamname = C::NAME ^ paramname
     paramvalue 	= C::QUOTEDSTRING.map {|s| s } | C::PTEXT.map {|s| s.upcase }
     
@@ -94,6 +94,9 @@ module Vcard::V3_0
 			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/VALUE/i.r, '=', valuetype) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
+		} | /PREF/i.r.map {|name|
+			# this is likely erroneous use of VCARD 2.1 convention in RFC2739; converting to canonical TYPE=PREF
+			{:TYPE => ["PREF"]}
     		} | seq(otherparamname, '=', pvalueList) {|name, _, val|
 	    		val = val[0] if val.length == 1
 			{name.upcase.gsub(/-/,"_").to_sym => val}

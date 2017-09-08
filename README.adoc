@@ -168,7 +168,7 @@ property typing, parameter typing, permitted properties within components, etc t
 
 The tool only parses one object at a time, and does not parse Vobject streams.
 
-This tool supports v3.0 vCard as specified in RFC 2425 and RFC 2426, and as updated in RFC 4770 (extensions for Instant Messaging)
+This tool supports v3.0 vCard as specified in RFC 2425 and RFC 2426, and as updated in RFC 2739 (calendar attributes) and RFC 4770 (extensions for Instant Messaging). It allows for the VCARD 2.1 style specification of PREF parameters in RFC 2739.
 
 This tool supports v4.0 vCard as specified in RFC 6350, and as updated in RFC 
 

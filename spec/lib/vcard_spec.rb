@@ -234,10 +234,16 @@ describe Vcard do
       ics = File.read "spec/examples/stenerson.vcf"
       expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
     end
-    it 'should process  VCF v3' do
+    it 'should process VCF v3' do
       ics = File.read "spec/examples/stenerson.1.vcf"
       vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
       exp_json = JSON.load(File.read "spec/examples/stenerson.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process RFC2739 additions to VCF v3' do
+      ics = File.read "spec/examples/rfc2739.vcf"
+      vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/rfc2739.json")
       expect(vobj_json).to include_json(exp_json)
     end
 

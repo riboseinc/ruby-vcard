@@ -34,7 +34,8 @@ module C
 			/MAILER/i.r | /TITLE/i.r | /ROLE/i.r | /NOTE/i.r | /PRODID/.r | /SORT-STRING/i.r |
 			/UID/i.r | /CLASS/i.r | /ORG/i.r | /CATEGORIES/i.r | /N/i.r | /PHOTO/i.r |
 			/LOGO/i.r | /SOUND/i.r | /KEY/i.r | /BDAY/i.r | /REV/i.r | /ADR/i.r |
-			/TEL/i.r | /TZ/i.r | /GEO/i.r | /AGENT/i.r | /IMPP/i.r
+			/TEL/i.r | /TZ/i.r | /GEO/i.r | /AGENT/i.r | /IMPP/i.r |
+			/FBURL/i.r | /CALADRURI/i.r | /CALURI/i.r | /CAPURI/i.r
     VCARD4PROPNAMES	= /SOURCE/i.r | /KIND/i.r | /FN/i.r | /NICKNAME/i.r | /NOTE/i.r | /N/i.r |
 	    	   	/PHOTO/i.r | /BDAY/i.r | /ANNIVERSARY/i.r | /GENDER/i.r | /ADR/i.r |
 			/TEL/i.r | /EMAIL/i.r | /IMPP/i.r | /LANG/i.r | /TZ/i.r |

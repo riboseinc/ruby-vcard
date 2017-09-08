@@ -310,8 +310,9 @@ module Vcard::V3_0
     case key
      when :VERSION
 	    ret = versionvalue._parse ctx1
-     when :SOURCE, :URL, :IMPP
+     when :SOURCE, :URL, :IMPP, :FBURL, :CALURI, :CALADRURI, :CAPURI
 	    ret = uri._parse ctx1
+	    # not imposing filename restrictions on calendar URIs
      when :NAME, :FN, :LABEL, :EMAIL, :MAILER, :TITLE, :ROLE, :NOTE, :PRODID, :SORT_STRING, :UID
 	    ret = textT._parse ctx1
      when :CLASS

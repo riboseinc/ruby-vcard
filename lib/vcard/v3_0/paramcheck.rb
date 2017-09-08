@@ -19,8 +19,19 @@ module Vcard::V3_0
 		parse_err("multiple values for :TYPE parameter of #{prop}", ctx) if params[:TYPE].kind_of?(Array) and params[:TYPE].length > 1 and prop != :EMAIL and prop != :ADR and prop != :TEL and prop != :LABEL and prop != :IMPP
 	end
 	case prop
-	when :NAME, :PROFILE, :GEO, :PRODID, :UID, :URL, :VERSION, :CLASS
+	when :NAME, :PROFILE, :GEO, :PRODID, :URL, :VERSION, :CLASS
 		parse_err("illegal parameters #{params} given for #{prop}", ctx) unless params.empty?
+	when :CALURI, :CAPURI, :CALADRURI, :FBURL
+		params.each {|key, val|
+			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE
+			if params[:TYPE].kind_of?(Array)
+				val.each {|v|
+					parse_err("illegal parameter value #{v} given for parameter #{key} of #{prop}", ctx) unless v == "PREF"
+				}
+			else
+				parse_err("illegal parameter value #{val} given for parameter #{key} of #{prop}", ctx) unless val == "PREF"
+			end
+		}
 	when :SOURCE
 		params.each {|key, val|
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE or key == :CONTEXT or key =~ /^x/i
@@ -32,7 +43,8 @@ module Vcard::V3_0
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :VALUE or key == :LANGUAGE or key =~ /^x/i
 			parse_err("illegal value #{val} given for parameter #{key} of #{prop}", ctx) if key == :VALUE and val != "ptext"
 		}
-	when :TEL, :IMPP
+	when :TEL, :IMPP, :UID
+		# UID included here per errata
 		params.each {|key, val|
 			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE
 		}
@@ -55,7 +67,9 @@ module Vcard::V3_0
 		# we do not check the values of the :ADR :TYPE parameter, because they include ianaToken
 	when :KEY
 		params.each {|key, val|
-			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE or key == :ENCODING
+			# VALUE included here per errata
+			parse_err("illegal parameter #{key} given for #{prop}", ctx) unless key == :TYPE or key == :ENCODING or key == :VALUE
+			parse_err("illegal value #{val} given for parameter #{key} of #{prop}", ctx) if key == :VALUE and val != "binary"
 		}
 		# we do not check the values of the :KEY :TYPE parameter, because they include ianaToken
 	when :PHOTO, :LOGO, :SOUND
