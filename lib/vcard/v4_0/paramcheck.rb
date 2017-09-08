@@ -12,9 +12,11 @@ module Vcard::V4_0
  class << self
 
    def paramcheck(prop, params, ctx) 
+            
            if params and params[:TYPE]
 		   case prop
 		   when :FN, :NICKNAME, :PHOTO, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
+		   when /^x/i
 		   else
                    	parse_err(":TYPE parameter given for #{prop}", ctx) 
 		   end
@@ -32,6 +34,7 @@ module Vcard::V4_0
                   	parse_err(":MEDIATYPE parameter given for #{prop} with :VALUE of text", ctx) 
 			   else
  			   end
+		   when /^x/i
 		   else
                    	parse_err(":MEDIATYPE parameter given for #{prop}", ctx) 
 		   end
@@ -39,6 +42,7 @@ module Vcard::V4_0
 	   if params and params[:CALSCALE]
 		   case prop
 		   when :BDAY, :ANNIVERSARY
+		   when /^x/i
 		   else
                    	parse_err(":CALSCALE parameter given for #{prop}", ctx) 
 		   end
@@ -46,6 +50,7 @@ module Vcard::V4_0
 	   if params and params[:GEO]
 		   case prop
 		   when :ADR
+		   when /^x/i
 		   else
                    	parse_err(":GEO parameter given for #{prop}", ctx) 
 		   end
@@ -53,6 +58,7 @@ module Vcard::V4_0
 	   if params and params[:TZ]
 		   case prop
 		   when :ADR
+		   when /^x/i
 		   else
                    	parse_err(":TZ parameter given for #{prop}", ctx) 
 		   end
@@ -71,6 +77,7 @@ module Vcard::V4_0
 			   else
                    		parse_err(":LANGUAGE parameter given for #{prop} with :VALUE of uri", ctx) 
 		        end
+		   when /^x/i
 		   else
                    	parse_err(":LANGUAGE parameter given for #{prop}", ctx) 
 		   end
@@ -78,6 +85,7 @@ module Vcard::V4_0
 	   if params and params[:VALUE]
 		   case prop
 		   when :SOURCE, :KIND, :XML, :FN, :N, :NICKNAME, :PHOTO, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI, :BDAY, :ANNIVERSARY
+		   when /^x/i
 		   else
                    	parse_err(":VALUE parameter given for #{prop}", ctx) 
 		   end
@@ -85,6 +93,7 @@ module Vcard::V4_0
 	   if params and params[:PREF]
 		   case prop
 		   when :SOURCE, :FN, :NICKNAME, :PHOTO, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
+		   when /^x/i
 		   else
                    	parse_err(":PREF parameter given for #{prop}", ctx) 
 		   end
@@ -92,6 +101,7 @@ module Vcard::V4_0
 	   if params and params[:PID]
 		   case prop
 		   when :SOURCE, :FN, :NICKNAME, :PHOTO, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
+		   when /^x/i
 		   else
                    	parse_err(":PID parameter given for #{prop}", ctx) 
 		   end
@@ -99,6 +109,7 @@ module Vcard::V4_0
 	   if params and params[:SORT_AS]
 		   case prop
 		   when  :N, :ORG
+		   when /^x/i
 		   else
                    	parse_err(":SORT_AS parameter given for #{prop}", ctx) 
 		   end
@@ -106,6 +117,7 @@ module Vcard::V4_0
 	   if params and params[:ALTID]
 		   case prop
 		   when :SOURCE, :XML, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
+		   when /^x/i
 		   else
                    	parse_err(":SOURCE parameter given for #{prop}", ctx) 
 		   end
@@ -113,6 +125,7 @@ module Vcard::V4_0
 	   if params and params[:LABEL]
 		   case prop
 		   when :ADR
+		   when /^x/i
 		   else
                    	parse_err(":LABEL parameter given for #{prop}", ctx) 
 		   end
@@ -126,6 +139,7 @@ module Vcard::V4_0
 			   # any-param
 			   case prop
 			   when :SOURCE, :KIND, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :UID, :CLIENTPIDMAP, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI
+		    when /^x/i
 			   else
                    		parse_err("#{p} parameter given for #{prop}", ctx) 
 			   end
@@ -169,7 +183,7 @@ private
 
 
    def parse_err(msg, ctx)
-	          raise ctx.generate_error 'source'
+	          raise ctx.report_error msg, 'source'
    end
 
   end

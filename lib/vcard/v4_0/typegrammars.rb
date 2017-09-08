@@ -388,14 +388,12 @@ module Vcard::V4_0
     when :BDAY, :ANNIVERSARY
 	    if params and params[:VALUE] == 'text'
 		    if params[:CALSCALE]
-		        STDERR.puts "Specified CALSCALE within property #{key} as text"
-		        raise ctx1.generate_error 'source'
+		        raise ctx1.report_error "Specified CALSCALE within property #{key} as text", 'source'
 		    end
 		    ret = textT._parse ctx1
 	    else
 		    if params and params[:CALSCALE] and /^T/ =~ value
-		        STDERR.puts "Specified CALSCALE within property #{key} as time"
-		        raise ctx1.generate_error 'source'
+		        raise ctx1.report_error "Specified CALSCALE within property #{key} as time", 'source'
 		    end
 		    ret = date_and_or_time._parse ctx1
 	    end
@@ -404,8 +402,7 @@ module Vcard::V4_0
 		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(',') : params[:TYPE]
 		    ret1 = typeparamtel1list.parse typestr
 		    if !ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter #{typestr} within property #{key}"
-	      		raise ctx1.generate_error 'source'
+	      		raise ctx1.report_error "Specified illegal TYPE parameter #{typestr} within property #{key}", 'source'
 		    end
 	    end
 	    if params and params[:VALUE] == 'uri'
@@ -418,8 +415,7 @@ module Vcard::V4_0
 		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(';') : params[:TYPE]
 		    ret1 = typerelatedlist.parse typestr
 		    if !ret1 or Rsec::INVALID[ret1]
-		        STDERR.puts "Specified illegal TYPE parameter #{typestr} within property #{key}"
-	      		raise ctx1.generate_error 'source'
+	      		raise ctx1.report_error "Specified illegal TYPE parameter #{typestr} within property #{key}", 'source'
 		    end
 	    end
 	    if params and params[:VALUE] == 'uri'
@@ -449,20 +445,17 @@ module Vcard::V4_0
 	      ret = timestamp._parse ctx1
      when :CLIENTPIDMAP
 	     if params and params[:PID]
-		        STDERR.puts "Specified PID parameter in CLIENTPIDMAP property"
-	      		raise @ctx.generate_error 'source'
+	      		raise @ctx.report_error "Specified PID parameter in CLIENTPIDMAP property", 'source'
 	     end
 	     ret = clientpidmap._parse ctx1
     else
 	    ret = value
     end
     if ret.kind_of?(Hash) and ret[:error]
-	STDERR.puts "#{ret[:error]} for property #{key}, value #{value}"
-        raise ctx1.generate_error 'source'
+        raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'
     end
     if Rsec::INVALID[ret] 
-	STDERR.puts "Type mismatch for property #{key}, value #{value}"
-        raise ctx1.generate_error 'source'
+        raise ctx1.report_error "Type mismatch for property #{key}, value #{value}", 'source'
     end
     return ret
   end

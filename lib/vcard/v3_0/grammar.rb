@@ -176,8 +176,7 @@ private
 
 
    def parse_err(msg)
-	   	  STDERR.puts msg
-	          raise @ctx.generate_error 'source'
+	          raise @ctx.report_error msg, 'source'
    end
 
   end

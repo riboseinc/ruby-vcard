@@ -381,12 +381,10 @@ module Vcard::V3_0
 	    ret = value
     end
     if ret.kind_of?(Hash) and ret[:error]
-	STDERR.puts "#{ret[:error]} for property #{key}, value #{value}"
-        raise ctx1.generate_error 'source'
+        raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'
     end
     if Rsec::INVALID[ret] 
-	STDERR.puts "Type mismatch for property #{key}, value #{value}"
-        raise ctx1.generate_error 'source'
+        raise ctx1.report_error "Type mismatch for property #{key}, value #{value}", 'source'
     end
     return ret
   end

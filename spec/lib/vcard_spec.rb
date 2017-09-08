@@ -246,5 +246,11 @@ describe Vcard do
       exp_json = JSON.load(File.read "spec/examples/rfc2739.json")
       expect(vobj_json).to include_json(exp_json)
     end
+    it 'should process VCF v4' do
+      ics = File.read "spec/examples/trafalgar.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/trafalgar.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
 
 end
