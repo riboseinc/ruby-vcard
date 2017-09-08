@@ -377,11 +377,11 @@ module Vcard::V4_0
     case key
      when :VERSION
 	    ret = versionvalue._parse ctx1
-     when :SOURCE, :PHOTO, :IMPP, :GEO, :LOGO, :MEMBER, :SOUND, :URL, :FBURL, :CALADRURI, :CALURI
+     when :SOURCE, :PHOTO, :IMPP, :GEO, :LOGO, :MEMBER, :SOUND, :URL, :FBURL, :CALADRURI, :CALURI, :ORG_DIRECTORY
 	    ret = uri._parse ctx1
      when :KIND
 	    ret = kindvalue._parse ctx1
-     when :XML, :FN, :EMAIL, :TITLE, :ROLE, :NOTE
+     when :XML, :FN, :EMAIL, :TITLE, :ROLE, :NOTE, :EXPERTISE, :HOBBY, :INTEREST
 	    ret = textT._parse ctx1
      when :NICKNAME, :CATEGORIES
 	    ret = textlist._parse ctx1

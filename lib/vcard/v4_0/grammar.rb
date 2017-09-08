@@ -33,7 +33,7 @@ module Vcard::V4_0
 # parameters and parameter types
     paramname 		= /LANGUAGE/i.r | /VALUE/i.r | /PREF/i.r | /ALTID/i.r | /PID/i.r |
 	    		/TYPE/i.r | /MEDIATYPE/i.r | /CALSCALE/i.r | /SORT-AS/i.r |
-			/GEO/i.r | /TZ/i.r | /LABEL/i.r
+			/GEO/i.r | /TZ/i.r | /LABEL/i.r | /INDEX/i.r | /LEVEL/i.r
     otherparamname = C::NAME ^ paramname
     paramvalue 	= C::QUOTEDSTRING.map {|s| rfc6868decode s } | C::PTEXT.map {|s| rfc6868decode(s).upcase }
     tzidvalue 	= seq("/".r._?, C::PTEXT).map {|_, val| val}    
@@ -91,6 +91,7 @@ module Vcard::V4_0
                 }
 
     fmttypevalue 	= seq(rfc4288typename, "/", rfc4288subtypename).map(&:join)
+    levelvalue	= /beginner/i.r | /average/i.r | /expert/i.r | /high/i.r | /medium/i.r | /low/i.r
 
     param 	= seq(/ALTID/i.r, '=', paramvalue) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
@@ -117,6 +118,10 @@ module Vcard::V4_0
 			{name.upcase.gsub(/-/,"_").to_sym => val}
 		} | seq(/PID/i.r, '=', pidvaluelist) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
+		} | seq(/INDEX/i.r, '=', prim(:int32)) {|name, _, val|
+			{name.upcase.gsub(/-/,"_").to_sym => val}
+		} | seq(/LEVEL/i.r, '=', levelvalue) {|name, _, val|
+			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(otherparamname, '=', pvalueList) {|name, _, val|
 	    		val = val[0] if val.length == 1
 			{name.upcase.gsub(/-/,"_").to_sym => val}
