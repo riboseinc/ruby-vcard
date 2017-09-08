@@ -23,18 +23,6 @@ module Vcard::V3_0
     @cardinality1 = {}
     @cardinality1[:PARAM] = Set.new [:VALUE]
     @cardinality1[:PROP] = Set.new [:KIND, :N, :BDAY, :ANNIVERSARY, :GENDER, :PRODID, :REV, :UID]
-    utf8_tail 	= /[\u0080-\u00bf]/.r
-    utf8_2 	= /[\u00c2-\u00df]/.r  | utf8_tail
-    utf8_3 	= /[\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef]/.r  | 
-	          utf8_tail
-    utf8_4 	= /[\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]/.r | utf8_tail
-    nonASCII 	= utf8_2 | utf8_3 | utf8_4
-    wsp 	= /[ \t]/.r
-    qSafeChar 	= wsp | /[!\u0023-\u007e]/ | nonASCII
-    safeChar 	= wsp | /[!\u0023-\u0039\u003c-\u007e]/  | nonASCII
-    vChar 	= /[\u0021-\u007e]/.r
-    valueChar 	= wsp | vChar | nonASCII
-    dQuote 	= /"/.r
 
     group 	= C::IANATOKEN
     linegroup 	= group <<  '.' 
@@ -114,7 +102,6 @@ module Vcard::V3_0
 			}
 		} |  seq(';'.r >> param ).map {|e| e[0] }
 
-    value 	= valueChar.star.map(&:join)
     contentline = seq(linegroup._?, C::NAME, params._?, ':', 
 		      C::VALUE, /(\r|\n|\r\n)/) {|group, name, params, _, value, _|
 			key =  name.upcase.gsub(/-/,"_").to_sym

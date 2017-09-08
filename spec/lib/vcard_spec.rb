@@ -158,12 +158,8 @@ describe Vcard do
       ics = File.read "spec/examples/John_Doe_GMAIL.1.vcf"
       expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
     end
-    it 'should reject double quotation mark in NOTE value, escaped' do
-      ics = File.read "spec/examples/John_Doe_GMAIL.2.vcf"
-      expect { Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n"))}.to raise_error(Rsec::SyntaxError)
-    end
     it 'should process GMAIL VCF v3' do
-      ics = File.read "spec/examples/John_Doe_GMAIL.3.vcf"
+      ics = File.read "spec/examples/John_Doe_GMAIL.2.vcf"
       vobj_json = Vcard.new('3.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
       exp_json = JSON.load(File.read "spec/examples/John_Doe_GMAIL.3.json")
       expect(vobj_json).to include_json(exp_json)

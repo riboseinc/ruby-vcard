@@ -52,14 +52,14 @@ module Vcard::V4_0
   end
 
   def textT
-    textT	= C::TEXT
+    textT	= C::TEXT4
     textT.eof
   end
 
   def textlist
     textlist	= 
-	    	seq(C::TEXT, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
-	    	C::TEXT.map {|t| [t]} 
+	    	seq(C::TEXT4, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
+	    	C::TEXT4.map {|t| [t]} 
     textlist.eof
   end
 
@@ -286,11 +286,11 @@ module Vcard::V4_0
   end
 
   def fivepartname
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
+    #text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
     component	=  
-	    	seq(C::TEXT, ',', lazy{component}) {|a, _, b|
+	    	seq(C::COMPONENT4, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		} | C::TEXT.map {|t| [t] }
+		} | C::COMPONENT4.map {|t| [t] }
     fivepartname = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
@@ -306,9 +306,9 @@ module Vcard::V4_0
 
   def address
     component	=  
-	    	seq(C::TEXT, ',', lazy{component}) {|a, _, b|
+	    	seq(C::COMPONENT4, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
-		} | C::TEXT.map {|t| [t] }
+		} | C::COMPONENT4.map {|t| [t] }
     address = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
@@ -325,7 +325,7 @@ module Vcard::V4_0
   end
 
   def gender
-	  gender = seq(/[MFONU]/.r._?, ';', C::TEXT) {|sex, _, gender|
+	  gender = seq(/[MFONU]/.r._?, ';', C::TEXT4) {|sex, _, gender|
 		  		sex = sex[0] unless sex.empty?
 		  		{:sex => sex, :gender => gender}
 			} | /[MFONU]/.r.map { |sex|
@@ -335,7 +335,7 @@ module Vcard::V4_0
   end
 
    def org
-       text        = C::TEXT
+       text        = C::COMPONENT4
        org =
                  seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
                   text.map {|t| [t]}

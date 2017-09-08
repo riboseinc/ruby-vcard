@@ -80,12 +80,12 @@ module Vcard::V3_0
   end
 
   def textT
-    textT	= C::TEXT
+    textT	= C::TEXT3
     textT.eof
   end
 
   def textlist
-    text	= C::TEXT
+    text	= C::TEXT3
     textlist	= 
 	    	seq(text << ','.r, lazy{textlist}) { |a, b| [a, b].flatten } |
 	    	text.map {|t| [t]}
@@ -93,7 +93,7 @@ module Vcard::V3_0
   end
 
   def org
-    text	= C::TEXT
+    text	= C::TEXT3
     org	= 
 	    	seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
 	    	text.map {|t| [t]}
@@ -228,7 +228,7 @@ module Vcard::V3_0
   end
 
   def address
-    text	= C::TEXT
+    text	= C::TEXT3
     component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
