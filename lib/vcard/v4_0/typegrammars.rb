@@ -114,17 +114,20 @@ module Vcard::V4_0
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, second, C::ZONE._?) {|m, s, z|
+            #} | seq('-', minute, second, C::ZONE._?) {|m, s, z|
+            # errata: remove zones from truncated times
+            } | seq('-', minute, second) {|m, s|
                 h = {:min => m, :sec => s}
-                h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, C::ZONE._?) {|m, z|
+            #} | seq('-', minute, C::ZONE._?) {|m, z|
+            # errata: remove zones from truncated times
+            } | seq('-', minute) {|m|
                 h = {:min => m}
-                h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', '-', second, C::ZONE._?) {|s, z|
+            #} | seq('-', '-', second, C::ZONE._?) {|s, z|
+            # errata: remove zones from truncated times
+            } | seq('-', '-', second) {|s|
                 h = {:sec => s}
-                h[:zone] = z[0] unless z.empty?
                 h
             }
     time.eof
@@ -257,17 +260,20 @@ module Vcard::V4_0
                 h = {:hour => h}
                 h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, second, C::ZONE._?) {|m, s, z|
+            #} | seq('-', minute, second, C::ZONE._?) {|m, s, z|
+            # errata: remove zones from truncated times
+            } | seq('-', minute, second) {|m, s|
                 h = {:min => m, :sec => s}
-                h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', minute, C::ZONE._?) {|m, z|
+            #} | seq('-', minute, C::ZONE._?) {|m, z|
+            # errata: remove zones from truncated times
+            } | seq('-', minute) {|m|
                 h = {:min => m}
-                h[:zone] = z[0] unless z.empty?
                 h
-            } | seq('-', '-', second, C::ZONE._?) {|s, z|
+            #} | seq('-', '-', second, C::ZONE._?) {|s, z|
+            # errata: remove zones from truncated times
+            } | seq('-', '-', second) {|s|
                 h = {:sec => s}
-                h[:zone] = z[0] unless z.empty?
                 h
             }
     date_and_or_time = date_time | date | seq("T", time).map {|_, t| t }
@@ -397,6 +403,12 @@ module Vcard::V4_0
 		    end
 		    ret = date_and_or_time._parse ctx1
 	    end
+    when :DEATHDATE
+	    if params and params[:VALUE] == 'text'
+		    ret = textT._parse ctx1
+	    else
+		    ret = date_and_or_time._parse ctx1
+	    end
     when :TEL
 	    if params and params[:TYPE]
 		    typestr = params[:TYPE].kind_of?(Array) ? params[:TYPE].join(',') : params[:TYPE]
@@ -405,6 +417,12 @@ module Vcard::V4_0
 	      		raise ctx1.report_error "Specified illegal TYPE parameter #{typestr} within property #{key}", 'source'
 		    end
 	    end
+	    if params and params[:VALUE] == 'uri'
+		    ret = uri._parse ctx1
+	    else
+		    ret = textT._parse ctx1
+	    end
+     when :BIRTHPLACE, :DEATHPLACE
 	    if params and params[:VALUE] == 'uri'
 		    ret = uri._parse ctx1
 	    else

@@ -22,7 +22,7 @@ module Vcard::V4_0
 # properties with value cardinality 1
     @cardinality1 = {}
     @cardinality1[:PARAM] = Set.new [:VALUE]
-    @cardinality1[:PROP] = Set.new [:KIND, :N, :BDAY, :ANNIVERSARY, :GENDER, :PRODID, :REV, :UID]
+    @cardinality1[:PROP] = Set.new [:KIND, :N, :BDAY, :ANNIVERSARY, :GENDER, :PRODID, :REV, :UID, :BIRTHPLACE, :DEATHPLACE, :DEATHDATE]
 
     group 	= C::IANATOKEN
     linegroup 	= group <<  '.' 
@@ -35,7 +35,7 @@ module Vcard::V4_0
 	    		/TYPE/i.r | /MEDIATYPE/i.r | /CALSCALE/i.r | /SORT-AS/i.r |
 			/GEO/i.r | /TZ/i.r | /LABEL/i.r
     otherparamname = C::NAME ^ paramname
-    paramvalue 	= C::QUOTEDSTRING.map {|s| s } | C::PTEXT.map {|s| s.upcase }
+    paramvalue 	= C::QUOTEDSTRING.map {|s| rfc6868decode s } | C::PTEXT.map {|s| rfc6868decode(s).upcase }
     tzidvalue 	= seq("/".r._?, C::PTEXT).map {|_, val| val}    
     calscalevalue = /GREGORIAN/i.r | C::IANATOKEN | C::XNAME
     prefvalue	= /[0-9]{1,2}/i.r | '100'.r
@@ -99,9 +99,7 @@ module Vcard::V4_0
     		} | seq(/PREF/i.r, '=', prefvalue) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val.upcase}
     		} | seq(/TYPE/i.r, '=', "\"".r >> typevaluelist << "\"".r) {|name, _, val|
-			# not in spec but in examples
-			{name.upcase.gsub(/-/,"_").to_sym => val}
-    		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
+			# not in spec but in examples. Errata ID 3488, "Held for Document Update": acknwoledged as error requiring an updated spec. With this included, TYPE="x,y,z" is a list of values; the proper ABNF behaviour is that "x,y,z" is interpreted as a single value
 			{name.upcase.gsub(/-/,"_").to_sym => val}
     		} | seq(/TYPE/i.r, '=', typevaluelist) {|name, _, val|
 			{name.upcase.gsub(/-/,"_").to_sym => val}
@@ -185,6 +183,11 @@ module Vcard::V4_0
     vobject.eof 
   end 
 
+    # RFC 6868
+  def rfc6868decode(x)
+             x.gsub(/\^n/, "\n").gsub(/\^\^/, '^').gsub(/\^'/, '"')
+  end
+  
   def parse(vobject)
 	@ctx = Rsec::ParseContext.new unfold(vobject), 'source'
 	ret = vobjectGrammar._parse @ctx

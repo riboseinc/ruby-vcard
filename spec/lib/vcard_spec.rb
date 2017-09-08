@@ -248,5 +248,23 @@ describe Vcard do
       exp_json = JSON.load(File.read "spec/examples/trafalgar.json")
       expect(vobj_json).to include_json(exp_json)
     end
+    it 'should process VCF v4 additions from RFC 6474' do
+      ics = File.read "spec/examples/rfc6474.1.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/rfc6474.1.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process VCF v4 additions from RFC 6474' do
+      ics = File.read "spec/examples/rfc6474.2.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/rfc6474.2.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
+    it 'should process VCF v4 additions from RFC 6474' do
+      ics = File.read "spec/examples/rfc6474.3.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/rfc6474.3.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
 
 end

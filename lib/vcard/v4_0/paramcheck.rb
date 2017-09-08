@@ -42,6 +42,11 @@ module Vcard::V4_0
 	   if params and params[:CALSCALE]
 		   case prop
 		   when :BDAY, :ANNIVERSARY
+		   when :DEATHDATE
+			   if params[:VALUE] == 'text'
+                   		parse_err(":CALSCALE parameter given for #{prop} with :VALUE of text", ctx) 
+			   else
+			   end
 		   when /^x/i
 		   else
                    	parse_err(":CALSCALE parameter given for #{prop}", ctx) 
@@ -65,8 +70,8 @@ module Vcard::V4_0
 	   end
 	   if params and params[:LANGUAGE]
 		   case prop
-		   when :FN, :N, :NICKNAME, :ADR, :TITLE, :ROLE, :LOGO, :ORG, :NOTE, :SOUND
-		   when :BDAY, :ANNIVERSARY
+		   when :FN, :N, :NICKNAME, :ADR, :TITLE, :ROLE, :LOGO, :ORG, :NOTE, :SOUND, :BIRTHPLACE, :DEATHPLACE
+		   when :BDAY, :ANNIVERSARY, :DEATHDATE
 			   # added :ANNIVERSARY per errata
 			   if params[:VALUE] == 'text'
 			   else
@@ -84,7 +89,7 @@ module Vcard::V4_0
 	   end
 	   if params and params[:VALUE]
 		   case prop
-		   when :SOURCE, :KIND, :XML, :FN, :N, :NICKNAME, :PHOTO, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI, :BDAY, :ANNIVERSARY
+		   when :SOURCE, :KIND, :XML, :FN, :N, :NICKNAME, :PHOTO, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI, :BDAY, :ANNIVERSARY, :BIRTHPLACE, :DEATHPLACE, :DEATHDATE
 		   when /^x/i
 		   else
                    	parse_err(":VALUE parameter given for #{prop}", ctx) 
@@ -116,7 +121,7 @@ module Vcard::V4_0
 	   end
 	   if params and params[:ALTID]
 		   case prop
-		   when :SOURCE, :XML, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI
+		   when :SOURCE, :XML, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :SOUND, :URL, :KEY, :FBURL, :CALADRURI, :CALURI, :BIRTHPLACE, :DEATHPLACE, :DEATHDATE
 		   when /^x/i
 		   else
                    	parse_err(":SOURCE parameter given for #{prop}", ctx) 
@@ -138,7 +143,7 @@ module Vcard::V4_0
 	 	   else
 			   # any-param
 			   case prop
-			   when :SOURCE, :KIND, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :UID, :CLIENTPIDMAP, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI
+			   when :SOURCE, :KIND, :FN, :N, :NICKNAME, :PHOTO, :BDAY, :ANNIVERSARY, :GENDER, :ADR, :TEL, :EMAIL, :IMPP, :LANG, :TZ, :GEO, :TITLE, :ROLE, :LOGO, :ORG, :MEMBER, :RELATED, :CATEGORIES, :NOTE, :PRODID, :REV, :SOUND, :UID, :CLIENTPIDMAP, :URL, :VERSION, :KEY, :FBURL, :CALADRURI, :CALURI, :BIRTHPLACE, :DEATHPLACE, :DEATHDATE
 		    when /^x/i
 			   else
                    		parse_err("#{p} parameter given for #{prop}", ctx) 
