@@ -286,7 +286,7 @@ module Vcard::V4_0
   end
 
   def kindvalue
-	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r |
+	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r | /application/i.r
 		  	C::IANATOKEN | C::XNAME
 	  kindvalue.eof
   end

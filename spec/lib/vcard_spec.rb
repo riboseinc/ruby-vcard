@@ -272,5 +272,11 @@ describe Vcard do
       exp_json = JSON.load(File.read "spec/examples/rfc6715.1.json")
       expect(vobj_json).to include_json(exp_json)
     end
+    it 'should process VCF v4 additions from RFC 6473' do
+      ics = File.read "spec/examples/rfc6473.vcf"
+      vobj_json = Vcard.new('4.0').parse(ics.gsub(/\r\n?/,"\n")).to_json
+      exp_json = JSON.load(File.read "spec/examples/rfc6473.json")
+      expect(vobj_json).to include_json(exp_json)
+    end
 
 end
