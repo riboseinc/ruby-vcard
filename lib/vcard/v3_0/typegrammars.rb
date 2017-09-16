@@ -7,6 +7,7 @@ include Rsec::Helpers
 require 'vcard/version'
 require_relative "./propertyparent"
 require 'vobject'
+require_relative './propertyvalue'
 
 module Vcard::V3_0
 	class Typegrammars
@@ -17,7 +18,8 @@ module Vcard::V3_0
 
     def binary
            binary  = seq(/[a-zA-Z0-9+\/]*/.r, /={0,2}/.r) {|b, q|
-                   ( (b.length + q.length) % 4 == 0 ) ? b + q : {:error => 'Malformed binary coding'}
+                   ( (b.length + q.length) % 4 == 0 ) ? Vcard::V3_0::PropertyValue::Binary.new(b + q) 
+		   : {:error => 'Malformed binary coding'}
                    }
             binary.eof
     end
@@ -25,15 +27,15 @@ module Vcard::V3_0
   def phoneNumber 
 	  # This is on the lax side; there should be up to 15 digits
 	  # Will allow letters
-	  phoneNumber = /[0-9() +A-Z-]+/i.r
+	  phoneNumber = /[0-9() +A-Z-]+/i.r.map {|p| Vcard::V3_0::PropertyValue::Phonenumber.new p}
 	  phoneNumber.eof
   end
 
     def geovalue
 	        float           = prim(:double)
-		    # TODO confirm that Rsec can do signs!
 		geovalue    = seq(float, ';', float) {|a, _, b|
-		              ( a <= 180.0 and a >= -180.0 and b <= 180 and b > -180 ) ? {:lat => a, :long => b} :
+		              ( a <= 180.0 and a >= -180.0 and b <= 180 and b > -180 ) ? 
+				      Vcard::V3_0::PropertyValue::Geovalue.new({:lat => a, :long => b}) :
 		                                       {:error => 'Latitude/Longitude outside of range -180..180'}
 		                                             }
 	                                                  geovalue.eof
@@ -43,66 +45,70 @@ module Vcard::V3_0
   def classvalue  
     ianaToken 	= /[a-zA-Z\d\-]+/.r 
     xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
-    classvalue 	= /PUBLIC/i.r | /PRIVATE/i.r | /CONFIDENTIAL/i.r | ianaToken | xname
+    classvalue 	= (/PUBLIC/i.r | /PRIVATE/i.r | /CONFIDENTIAL/i.r | ianaToken | xname).map {|m|
+    		Vcard::V3_0::PropertyValue::ClassValue.new m }
     classvalue.eof
   end
   
   def integer  
-    integer 	= prim(:int32)
+    integer 	= prim(:int32).map {|i| Vcard::V3_0::PropertyValue::Integer.new i }
     integer.eof
   end
   
-  def float
-    float 	    = prim(:double)
-    float.eof
+  def floatT
+    floatT 	    = prim(:double).map {|f| Vcard::V3_0::PropertyValue::Float.new f }
+    floatT.eof
   end
 
   def ianaToken
-    ianaToken 	= /[a-zA-Z\d\-]+/.r 
+    ianaToken 	= /[a-zA-Z\d\-]+/.r.map {|x| Vcard::V3_0::PropertyValue::Ianatoken.new x }
     ianaToken.eof
   end 
 
   def versionvalue
-     versionvalue = '3.0'.r 
+     versionvalue = '3.0'.r.map {|v| Vcard::V3_0::PropertyValue::Version.new v}
      versionvalue.eof
   end
 
   def profilevalue
-     profilevalue = /VCARD/i.r
+     profilevalue = /VCARD/i.r.map {|v| Vcard::V3_0::PropertyValue::Profilevalue.new v}
      profilevalue.eof
   end
 
   def uri
 	uri         = /\S+/.r.map {|s|
-	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
+	                  	s =~ URI::regexp ? Vcard::V3_0::PropertyValue::Uri.new(s) : 
+					{:error => 'Invalid URI'}
 			 }
 	uri.eof
   end
 
   def textT
-    textT	= C::TEXT3
+    textT	= C::TEXT3.map {|t| Vcard::V3_0::PropertyValue::Text.new(unescape t) }
     textT.eof
   end
 
   def textlist
     text	= C::TEXT3
-    textlist	= 
-	    	seq(text << ','.r, lazy{textlist}) { |a, b| [a, b].flatten } |
-	    	text.map {|t| [t]}
+    textlist1	= 
+	    	seq(text << ','.r, lazy{textlist1}) { |a, b| [unescape(a), b].flatten } |
+	    	text.map {|t| [unescape(t)]}
+    textlist	= textlist1.map {|m| Vcard::V3_0::PropertyValue::Textlist.new m }
     textlist.eof
   end
 
   def org
     text	= C::TEXT3
-    org	= 
-	    	seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
-	    	text.map {|t| [t]}
+    org1	= 
+	    	seq(text, ';', lazy{org1}) { |a, _, b| [unescape(a), b].flatten } |
+	    	text.map {|t| [unescape(t)]}
+    org		= org1.map {|o| Vcard::V3_0::PropertyValue::Org.new o }
     org.eof
   end
 
   def dateT
      dateT	= seq(/[0-9]{4}/.r, /-/.r._?, /[0-9]{2}/.r, /-/.r._?, /[0-9]{2}/.r) {|yy, _, mm, _, dd|
-		    {:year => yy, :month => mm, :day => dd}
+		    Vcard::V3_0::PropertyValue::Date.new({:year => yy, :month => mm, :day => dd})
         } 
      dateT.eof
   end
@@ -121,7 +127,7 @@ module Vcard::V3_0
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h[:secfrac] = f[0] unless f.empty?
-                h
+                Vcard::V3_0::PropertyValue::Time.new(h)
             } 
     timeT.eof
   end
@@ -141,12 +147,19 @@ module Vcard::V3_0
         } 
     time	= seq(hour, /:/.r._?, minute, /:/.r._?, second, secfrac._?, zone._?) {|h, _, m, _, s, f, z|
                 h = {:hour => h, :min => m, :sec => s}
-                h[:zone] = z[0] unless z.empty?
+		if z.empty?
+                	h[:zone] = ''
+		else
+                	h[:zone] = z[0] 
+		end
                 h[:secfrac] = f[0] unless f.empty?
                 h
             } 
      date_time	= seq(date, 'T', time) {|d, _, t|
-                d.merge t
+                	d = d.merge t
+			res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
+			res[:secfrac] = h[:secfrac] if h[:secfrac]
+			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
 	     	}
      date_time.eof
   end
@@ -171,14 +184,20 @@ module Vcard::V3_0
                 h
             } 
      date_or_date_time	= seq(date, 'T', time) {|d, _, t|
-                d.merge t
-	     	} | date
+                	d = d.merge t
+			res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
+			res[:secfrac] = d[:secfrac] if d[:secfrac]
+			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
+	     	} | date.map {|d|
+			res = {:time => Time.local(d[:year], d[:month], d[:day], 0, 0, 0), :zone => d[:zone]}
+			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
+		}
      date_or_date_time.eof
   end
 
   def utc_offset
     utc_offset 	= seq(C::SIGN, /[0-9]{2}/.r, /:/.r._?, /[0-9]{2}/.r) {|s, h, _, m|
-                    {:sign => s, :hour => h, :min => m}
+                    Vcard::V3_0::PropertyValue::Utcoffset.new({:sign => s, :hour => h, :min => m})
                 }
     utc_offset.eof
   end
@@ -186,18 +205,19 @@ module Vcard::V3_0
   def kindvalue
     ianaToken 	= /[a-zA-Z\d\-]+/.r 
     xname 	= seq( '[xX]-', /[a-zA-Z0-9-]+/.r).map(&:join)
-	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r |
-		  	ianaToken | xname
-	  kindvlaue.eof
+	  kindvalue = (/individual/i.r | /group/i.r | /org/i.r | /location/i.r |
+		  	ianaToken | xname).map {|k| Vcard::V3_0::PropertyValue::Kindvalue.new(k)}
+	  kindvalue.eof
   end
 
   def fivepartname
-    text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
+    #text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r  
+    text	= C::TEXT3
     component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
 		} | text.map {|t| [t] }
-    fivepartname = seq(component, ';', component, ';', component, ';', 
+    fivepartname1 = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
 	    		b = b[0] if b.length == 1
@@ -222,8 +242,9 @@ module Vcard::V3_0
 	    		{:surname => a, :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
 	    	} | component.map {|a|
 	    		a = a[0] if a.length == 1
-	    		{:surname => '', :givenname => b, :middlename => '', :honprefix => '', :honsuffix => ''}
+	    		{:surname => 'a', :givenname => '', :middlename => '', :honprefix => '', :honsuffix => ''}
 	    	} 
+    fivepartname 	= fivepartname1.map {|n| Vcard::V3_0::PropertyValue::Fivepartname.new(n)}
     fivepartname.eof
   end
 
@@ -233,7 +254,7 @@ module Vcard::V3_0
 	    	seq(text, ',', lazy{component}) {|a, _, b|
 	    		[a, b].flatten
 		} | text.map {|t| [t] }
-    address = seq(component, ';', component, ';', component, ';', component, ';', 
+    address1 = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
 	    		b = b[0] if b.length == 1
@@ -286,6 +307,7 @@ module Vcard::V3_0
 	    		{:pobox => a, :ext => '', :street => '', 
 				:locality => '', :region => '', :code => '', :country => ''}
 	    	} 
+    address 	= address1.map {|n| Vcard::V3_0::PropertyValue::Address.new(n)}
     address.eof
   end
 
@@ -298,7 +320,11 @@ module Vcard::V3_0
 	          p = registered_propname.parse(x)
 		      return not(Rsec::INVALID[p])
 		        end
-
+    # text escapes: \\ \; \, \N \n
+    def unescape(x)
+        # temporarily escape \\ as \007f, which is disallowed in any text
+        x.gsub(/\\\\/, "\u007f").gsub(/\\;/, ';').gsub(/\\,/, ',').gsub(/\\[Nn]/, "\n").gsub(/\u007f/, "\\")
+    end
 
 
   # Enforce type restrictions on values of particular properties.
@@ -378,7 +404,7 @@ module Vcard::V3_0
 		ret = Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1
 	    end
     else
-	    ret = value
+	    ret = Vcard::V3_0::PropertyValue::Text.new value
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'

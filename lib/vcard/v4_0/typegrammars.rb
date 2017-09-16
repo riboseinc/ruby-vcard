@@ -2,10 +2,10 @@ require "rsec"
 require "set"
 require "uri"
 require "date"
-#require "tzinfo"
 include Rsec::Helpers
 require 'vcard/version'
 require 'vobject'
+require_relative './propertyvalue'
 
 module Vcard::V4_0
 	class Typegrammars
@@ -15,28 +15,29 @@ module Vcard::V4_0
   # property value types, each defining their own parser
 
   def integer  
-    integer 	= prim(:int32)
+    integer 	= prim(:int32).map {|i| Vcard::V4_0::PropertyValue::Integer.new i }
     integer.eof
   end
   
-  def float
-    float 	    = prim(:double)
-    float.eof
+  def floatT
+    floatT 	    = prim(:double).map {|f| Vcard::V4_0::PropertyValue::Float.new f }
+    floatT.eof
   end
 
   def ianaToken
-    ianaToken 	= C::IANATOKEN
+    ianaToken 	= C::IANATOKEN.map {|x| Vcard::V4_0::PropertyValue::Ianatoken.new x}
     ianaToken.eof
   end 
 
   def versionvalue
-     versionvalue = '4.0'.r 
+     versionvalue = '4.0'.r.map {|v| Vcard::V4_0::PropertyValue::Version.new v} 
      versionvalue.eof
   end
 
   def uri
 	uri         = /\S+/.r.map {|s|
-	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
+	                  	s =~ URI::regexp ? Vcard::V4_0::PropertyValue::Uri.new(s) : 
+					{:error => 'Invalid URI'}
 			 }
 	uri.eof
   end
@@ -46,25 +47,26 @@ module Vcard::V4_0
 	                  	s =~ URI::regexp ? s : {:error => 'Invalid URI'}
 			 }
 	clientpidmap = seq(/[0-9]/.r, ';', uri) {|a, _, b|
-		{:pid => a, :uri => b}
+		Vcard::V4_0::PropertyValue::Clientpidmap.new({:pid => a, :uri => b})
 	}
 	clientpidmap.eof
   end
 
   def textT
-    textT	= C::TEXT4
+    textT	= C::TEXT4.map {|t| Vcard::V4_0::PropertyValue::Text.new(unescape t) }
     textT.eof
   end
 
   def textlist
-    textlist	= 
-	    	seq(C::TEXT4, ',', lazy{textlist}) { |a, b| [a, b].flatten } |
-	    	C::TEXT4.map {|t| [t]} 
+    textlist1	= 
+	    	seq(C::TEXT4, ',', lazy{textlist1}) { |a, b| [unescape(a), b].flatten } |
+	    	C::TEXT4.map {|t| [unescape(t)]} 
+    textlist    = textlist1.map {|m| Vcard::V4_0::PropertyValue::Textlist.new m }
     textlist.eof
   end
 
   def dateT
-     dateT	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+     dateT1	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
 		    {:year => yy, :month => mm, :day => dd}
 		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
 			{:year => yy, :day => dd }
@@ -77,24 +79,27 @@ module Vcard::V4_0
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
 		    {:day => dd}
 		}
+     dateT	= dateT1.map {|d| Vcard::V4_0::PropertyValue::Date.new d }
      dateT.eof
   end
 
   def date_noreduc
-     date_noreduc	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+     date_noreduc1	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
 	     		{:year => yy, :month => mm, :day => dd}
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
 		        {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
 		        {:day => dd}
 		}
+     date_noreduc	= date_noreduc1.map {|d| Vcard::V4_0::PropertyValue::Date.new d }
      date_noreduc.eof
   end
 
   def date_complete
-     date_complete	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
+     date_complete1	= seq(/[0-9]{4}/.r, /[0-9]{2}/.r, /[0-9]{2}/.r) {|yy, mm, dd|
             {:year => yy, :month => mm, :day => dd}
 		}
+     date_complete	= date_complete1.map {|d| Vcard::V4_0::PropertyValue::Date.new d }
      date_complete.eof
   end
 
@@ -102,7 +107,7 @@ module Vcard::V4_0
     hour	= /[0-9]{2}/.r
     minute	= /[0-9]{2}/.r
     second	= /[0-9]{2}/.r
-    time	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
+    time1	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -130,11 +135,12 @@ module Vcard::V4_0
                 h = {:sec => s}
                 h
             }
+    time 	= time1.map {|d| Vcard::V4_0::PropertyValue::Time.new d }
     time.eof
   end
 
   def time_notrunc
-    time_notrunc	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
+    time_notrunc1	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
@@ -147,15 +153,17 @@ module Vcard::V4_0
                 h[:zone] = z[0] unless z.empty?
                 h
 	    	}
+    time_notrunc 	= time_notrunc1.map {|d| Vcard::V4_0::PropertyValue::Time.new d }
 	time_notrunc.eof
   end
 
   def time_complete
-    time_complete	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
+    time_complete1	= seq(hour, minute, second, C::ZONE._?) {|h, m, s, z|
                 h = {:hour => h, :min => m, :sec => s}
                 h[:zone] = z[0] unless z.empty?
                 h
             } 
+    time_complete 	= time_complete1.map {|d| Vcard::V4_0::PropertyValue::Time.new d }
 	time_complete.eof
   end
 
@@ -180,12 +188,13 @@ module Vcard::V4_0
             {:year => yy, :month => mm, :day => dd}
         } |
 		seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
-		    {:month => mm, :date => dd}
+		    {:month => mm, :day => dd}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
-		    {:date => dd}
+		    {:day => dd}
 		}
      date_time	= seq(date_noreduc, 'T', time_notrunc) {|d, _, t|
-                d.merge t
+                d = d.merge t
+		Vcard::V4_0::PropertyValue::DateTimeLocal.new d
 	     	}
      date_time.eof
   end
@@ -203,7 +212,7 @@ module Vcard::V4_0
                 h
     }
     timestamp 	= seq(date_complete, 'T', time_complete)  {|d, _, t|
-                d.merge t
+		Vcard::V4_0::PropertyValue::DateTimeLocal.new(d.merge t)
 	     	}
     timestamp.eof
   end
@@ -276,18 +285,20 @@ module Vcard::V4_0
                 h = {:sec => s}
                 h
             }
-    date_and_or_time = date_time | date | seq("T", time).map {|_, t| t }
+     date_and_or_time = date_time.map {|d| Vcard::V4_0::PropertyValue::DateTimeLocal.new d} | 
+	     date.map {|d| Vcard::V4_0::PropertyValue::Date.new d} | 
+	     seq("T".r >> time).map {|t| Vcard::V4_0::PropertyValue::Time.new t }
      date_and_or_time.eof
   end
   
   def utc_offset
-    utc_offset 	= C::UTC_OFFSET
+    utc_offset 	= C::UTC_OFFSET.map {|u| Vcard::V4_0::PropertyValue::Utcoffset.new u}
     utc_offset.eof
   end
 
   def kindvalue
-	  kindvalue = /individual/i.r | /group/i.r | /org/i.r | /location/i.r | /application/i.r
-		  	C::IANATOKEN | C::XNAME
+	  kindvalue = (/individual/i.r | /group/i.r | /org/i.r | /location/i.r | /application/i.r
+		  	C::IANATOKEN | C::XNAME).map {|v| Vcard::V4_0::PropertyValue::Kindvalue.new v}
 	  kindvalue.eof
   end
 
@@ -295,8 +306,8 @@ module Vcard::V4_0
     #text	= /([ \t\u0021\u0023-\u002b\u002d-\u0039\u003c-\u005b\u005d-\u007e:"\u0080-\u00bf\u00c2-\u00df\u00e0\u00a0-\u00bf\u00e1-\u00ec\u00ed\u0080-\u009f\u00ee-\u00ef\u00f0\u0090-\u00bf\u00f1-\u00f3\u00f4\u0080-\u008f]|\\[;,\\nN])*/.r
     component	=  
 	    	seq(C::COMPONENT4, ',', lazy{component}) {|a, _, b|
-	    		[a, b].flatten
-		} | C::COMPONENT4.map {|t| [t] }
+	    		[unescape_component(a), b].flatten
+		} | C::COMPONENT4.map {|t| [unescape_component(t)] }
     fivepartname = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
@@ -304,8 +315,8 @@ module Vcard::V4_0
 	    		c = c[0] if c.length == 1
 	    		d = d[0] if d.length == 1
 	    		e = e[0] if e.length == 1
-	    		{:surname => a, :givenname => b, :additionalname => c, 
-				:honprefix => d, :honsuffix => e}
+	    		Vcard::V4_0::PropertyValue::Fivepartname.new({:surname => a, :givenname => b, :additionalname => c, 
+				:honprefix => d, :honsuffix => e})
 	    	}
     fivepartname.eof
   end
@@ -313,8 +324,8 @@ module Vcard::V4_0
   def address
     component	=  
 	    	seq(C::COMPONENT4, ',', lazy{component}) {|a, _, b|
-	    		[a, b].flatten
-		} | C::COMPONENT4.map {|t| [t] }
+	    		[unescape_component(a), b].flatten
+		} | C::COMPONENT4.map {|t| [unescape_component(t)] }
     address = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
@@ -324,30 +335,35 @@ module Vcard::V4_0
 	    		e = e[0] if e.length == 1
 	    		f = f[0] if f.length == 1
 	    		g = g[0] if g.length == 1
-	    		{:pobox => a, :ext => b, :street => c, 
-				:locality => d, :region => e, :code => f, :country => g}
+	    		Vcard::V4_0::PropertyValue::Address.new({:pobox => a, :ext => b, :street => c, 
+				:locality => d, :region => e, :code => f, :country => g})
 	    	}
     address.eof
   end
 
   def gender
-	  gender = seq(/[MFONU]/.r._?, ';', C::TEXT4) {|sex, _, gender|
+	  gender1 = seq(/[MFONU]/.r._?, ';', C::TEXT4) {|sex, _, gender|
 		  		sex = sex[0] unless sex.empty?
 		  		{:sex => sex, :gender => gender}
 			} | /[MFONU]/.r.map { |sex|
 				{:sex => sex, :gender => ''}
 			}
+	  gender	= gender1.map{|g| Vcard::V4_0::PropertyValue::Gender.new g}
 	  gender.eof
   end
 
    def org
        text        = C::COMPONENT4
-       org =
-                 seq(text, ';', lazy{org}) { |a, _, b| [a, b].flatten } |
-                  text.map {|t| [t]}
+       org1 =
+                 seq(text, ';', lazy{org1}) { |a, _, b| [unescape_component(a), b].flatten } |
+                  text.map {|t| [unescape_component(t)]}
+       org	= org1.map{|g| Vcard::V4_0::PropertyValue::Org.new g}
        org.eof
    end
 
+   def lang 
+	   lang = C::RFC5646LANGVALUE.map{|l| Vcard::V4_0::PropertyValue::Lang.new l}
+   end
 
   def typeparamtel1list
     typeparamtel1	= /TEXT/i.r | /VOICE/i.r | /FAX/i.r | /CELL/i.r | /VIDEO/i.r |
@@ -369,6 +385,18 @@ module Vcard::V4_0
 			} | typeparamrelated.map {|t| [t] } 
       typerelatedlist.eof
   end
+
+    # text escapes: \\ \; \, \N \n
+    def unescape(x)
+        # temporarily escape \\ as \007f, which is disallowed in any text
+        x.gsub(/\\\\/, "\u007f").gsub(/\\,/, ',').gsub(/\\[Nn]/, "\n").gsub(/\u007f/, "\\")
+    end
+    # also escape semicolon for compound types
+    def unescape_component(x)
+        # temporarily escape \\ as \007f, which is disallowed in any text
+        x.gsub(/\\\\/, "\u007f").gsub(/\\;/, ';').gsub(/\\,/, ',').gsub(/\\[Nn]/, "\n").gsub(/\u007f/, "\\")
+    end
+ 
 
   # Enforce type restrictions on values of particular properties.
   # If successful, return typed interpretation of string
@@ -450,7 +478,7 @@ module Vcard::V4_0
      when :GENDER
 	    ret = gender._parse ctx1
      when :LANG
-	    ret = C::RFC5646LANGVALUE._parse ctx1
+	    ret = lang._parse ctx1
      when :TZ
 	     if params and params[:VALUE] == 'uri'
 	    	ret = uri._parse ctx1
@@ -467,7 +495,7 @@ module Vcard::V4_0
 	     end
 	     ret = clientpidmap._parse ctx1
     else
-	    ret = value
+	    ret = Vcard::V4_0::PropertyValue::Text.new value
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'

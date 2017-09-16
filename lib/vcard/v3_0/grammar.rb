@@ -110,7 +110,6 @@ module Vcard::V3_0
 			hash[key][:group] = group[0]  unless group.empty?
 			Paramcheck.paramcheck(key, params.empty? ? {} : params[0], @ctx)
 			hash[key][:params] = params[0] unless params.empty?
-			# TODO restrictions on params
 			hash
 		}
         props	=  seq(contentline, lazy{props}) {|c, rest|
