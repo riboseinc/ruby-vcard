@@ -73,90 +73,6 @@ module PropertyValue
 
   end
 
-#  class ActionValue < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'actionvalue'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class MethodValue < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'methodvalue'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class Busytype < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'busytype'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class Color < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'color'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class EventStatus < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'eventstatus'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class Todostatus < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'todostatus'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class Journalstatus < Text
-#    def initialize val
-#        self.value = val
-#        self.type = 'journalstatus'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
   class Ianatoken < Text
     def initialize val
         self.value = val
@@ -205,23 +121,6 @@ module PropertyValue
 
   end
 
-#  class Calscale < Vobject::PropertyValue
-#
-#    def initialize val
-#        self.value = val
-#        self.type = 'calscale'
-#    end
-#
-#    def to_s
-#	    self.value
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
   class Float < Vobject::PropertyValue
     include Comparable
     def <=>(anOther)
@@ -264,32 +163,6 @@ module PropertyValue
 
   end
 
-#  class PercentComplete < Integer
-#
-#    def initialize val
-#        self.value = val
-#        self.type = 'percentcomplete'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
-#  class Priority < Integer
-#
-#    def initialize val
-#        self.value = val
-#        self.type = 'priority'
-#    end
-#
-#    def to_hash
-#      self.value
-#    end
-#
-#  end
-#
   class Date < Vobject::PropertyValue
     include Comparable
     def <=>(anOther)
@@ -321,19 +194,25 @@ module PropertyValue
         self.value = val
 	# val consists of :time and :zone values. If :zone is empty, floating local time (i.e. system local time) is assumed
         self.type = 'datetimeLocal'
+	val[:sec] += (val[:secfrac].to_f / (10 ** val[:secfrac].length)) if !val[:secfrac].nil? and !val[:secfrac].empty?
+	if val[:zone].nil? or val[:zone].empty?
+		self.value[:time] = ::Time.local(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
+	else
+		self.value[:time] = ::Time.utc(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
+	end
+	if val[:zone] and val[:zone] != 'Z'
+            offset = val[:zone][:hour]*3600 + val[:zone][:min]*60
+            offset += val[:zone][:sec] if val[:zone][:sec]
+            offset = -offset if val[:sign] == '-'
+            self.value[:time] += offset.to_i
+        end
     end
 
     def to_s
-	if !self.value[:zone].empty?
-		tz = TZInfo::Timezone.get(self.value[:zone])
-		# TODO move it to the UTC offset
-		localtime = tz.utc_to_local(self.value[:time])
-	else
-		localtime = self.value[:time]
-	end
+	localtime = self.value[:time]
 	ret = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", localtime.year, localtime.month, localtime.day,
 	       localtime.hour, localtime.min, localtime.sec)
-	ret = ret + ".#{self.value[:secfrac]}" if self.value[:secfrac]
+	ret = ret + ",.#{self.value[:secfrac]}" if self.value[:secfrac]
 	zone = "Z" if self.value[:zone] and self.value[:zone] == "Z"
 	zone = "#{self.value[:zone][:sign]}#{self.value[:zone][:hour]}:#{self.value[:zone][:min]}" if self.value[:zone] and self.value[:zone].kind_of?(Hash)
         ret = ret + zone
@@ -342,42 +221,16 @@ module PropertyValue
 
 
     def to_hash
-      self.value
-    end
-
-  end
-
-  class DateOrDateTimeLocal < Vobject::PropertyValue
-    include Comparable
-    def <=>(anOther)
-	    self.value[:time] <=> anOther.value[:time]
-    end
-
-    def initialize val
-        self.value = val
-	# val consists of :time and :zone values. If :zone is empty, floating local time (i.e. system local time) is assumed
-        self.type = 'datetimeLocal'
-    end
-
-    def to_s
-	if !self.value[:zone].empty?
-		tz = TZInfo::Timezone.get(self.value[:zone])
-		localtime = tz.utc_to_local(self.value[:time])
-	else
-		localtime = self.value[:time]
-	end
-	ret = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", localtime.year, localtime.month, localtime.day,
-	       localtime.hour, localtime.min, localtime.sec)
-	ret = ret + ".#{self.value[:secfrac]}" if self.value[:secfrac]
-	zone = "Z" if self.value[:zone] and self.value[:zone] == "Z"
-	zone = "#{self.value[:zone][:sign]}#{self.value[:zone][:hour]}:#{self.value[:zone][:min]}" if self.value[:zone] and self.value[:zone].kind_of?(Hash)
-        ret = ret + zone
-	ret
-    end
-
-
-    def to_hash
-      self.value
+	    ret = {
+		    :year => self.value[:year],
+		    :month => self.value[:month],
+		    :day => self.value[:day],
+		    :hour => self.value[:hour],
+		    :min => self.value[:min],
+		    :sec => self.value[:sec],
+	    }
+	    ret[:zone] = self.value[:zone] if self.value[:zone]
+	    ret
     end
 
   end
@@ -597,6 +450,33 @@ module PropertyValue
 
     def to_hash
       	self.value
+    end
+
+  end
+
+  class Agent < Vobject::PropertyValue
+    def initialize val
+        self.value = val
+        self.type = 'agent'
+    end
+
+    def to_hash
+	    ret = {}
+	    self.value.each{|k, v| 
+		ret[k] = {}
+		v.each{|k1, v1|
+			ret[k][k1] = {}
+			v1.each {|k2, v2|
+				ret[k][k1][k2] = v2.to_hash
+			}
+		}
+	    }
+	    ret
+    end
+
+    def to_s
+	ret = Vobject::Component.new(self.value).to_s
+	ret.gsub(/\n/,"\\n")
     end
 
   end

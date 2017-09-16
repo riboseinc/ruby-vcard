@@ -41,7 +41,7 @@
      {"value":
        {"pobox":"",
         "ext":"",
-        "street":"Street4\\nBuilding 6\\nFloor 8",
+        "street":"Street4\nBuilding 6\nFloor 8",
         "locality":"New York",
         "region":"",
         "code":"12345",
@@ -50,7 +50,7 @@
       "params":{"TYPE":["WORK"]}}],
    "X_ABADR":
     [{"value":"Silicon Alley", "group":"item3"},
-     {"value":"Street 4, Building 6,\\n Floor 8\\nNew York\\nUSA",
+     {"value":"Street 4, Building 6,\n Floor 8\nNew York\nUSA",
       "group":"item4"}],
    "URL":{"value":"http://www.ibm.com", "group":"item5"},
    "BDAY":

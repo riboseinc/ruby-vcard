@@ -80,7 +80,7 @@
     {"value":"2016-08-03"},
    "X_FCENCODED_582D46432D4F7468657244617465733A437573746F6D54595045":
     {"value":"2016-08-04"},
-   "NOTE":{"value":"Notes line 1\\nNotes line 2"},
+   "NOTE":{"value":"Notes line 1\nNotes line 2"},
    "URL":
     [{"value":"http://www.homepage.com"},
      {"value":"http://www.blog.com"},

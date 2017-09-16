@@ -495,7 +495,7 @@ module Vcard::V4_0
 	     end
 	     ret = clientpidmap._parse ctx1
     else
-	    ret = Vcard::V4_0::PropertyValue::Text.new value
+	    ret = Vcard::V4_0::PropertyValue::Text.new unescape(value)
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'

@@ -4,10 +4,10 @@
     {"value":
       {"surname":"Doe",
        "givenname":"John",
-       "middlename":"Richter\\,James",
+       "middlename":"Richter,James",
        "honprefix":"Mr.",
        "honsuffix":"Sr."}},
-   "FN":{"value":"Mr. John Richter\\,James Doe Sr."},
+   "FN":{"value":"Mr. John Richter,James Doe Sr."},
    "NICKNAME":{"value":["Johny"]},
    "X_PHONETIC_FIRST_NAME":{"value":"Jon"},
    "X_PHONETIC_LAST_NAME":{"value":"Dow"},
@@ -32,7 +32,7 @@
     [{"value":
        {"pobox":"",
         "ext":"",
-        "street":"Silicon Alley 5\\,",
+        "street":"Silicon Alley 5,",
         "locality":"New York",
         "region":"New York",
         "code":"12345",
@@ -42,7 +42,7 @@
      {"value":
        {"pobox":"",
         "ext":"",
-        "street":"Street4\\nBuilding 6\\nFloor 8",
+        "street":"Street4\nBuilding 6\nFloor 8",
         "locality":"New York",
         "region":"",
         "code":"12345",
@@ -51,11 +51,11 @@
       "params":{"TYPE":["WORK"]}}],
    "X_ABADR":
     [{"value":"Silicon Alley", "group":"item2"},
-     {"value":"Street 4, Building 6,\\nFloor 8\\nNew York\\nUSA",
+     {"value":"Street 4, Building 6,\nFloor 8\nNew York\nUSA",
       "group":"item3"}],
    "NOTE":
     {"value":
-      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES\\, INCLUDING\\, BUT NOT LIMITED TO\\, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT\\, INDIRECT\\, INCIDENTAL\\, SPECIAL\\, EXEMPLARY\\, OR CONSEQUENTIAL DAMAGES (INCLUDING\\, BUT NOT LIMITED TO\\, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES\\; LOSS OF USE\\, DATA\\, OR PROFITS\\; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY\\, WHETHER IN CONTRACT\\, STRICT LIABILITY\\, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE\\, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."},
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."},
    "URL":{"value":"http://www.ibm.com", "group":"item4"},
    "BDAY":
     {"value":{"year":"2012", "month":"06", "day":"06"},

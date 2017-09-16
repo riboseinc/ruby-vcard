@@ -24,7 +24,7 @@
        "country":"223"},
      "params":{"TYPE":["WORK", "PREF"]}},
    "LABEL":
-    {"value":"aweg223\\n323\\n223", "params":{"TYPE":["WORK", "PREF"]}},
+    {"value":"aweg223\n323\n223", "params":{"TYPE":["WORK", "PREF"]}},
    "TEL":
     [{"value":"23g23", "params":{"TYPE":["WORK"]}},
      {"value":"aweg", "params":{"TYPE":["CELL"]}}],

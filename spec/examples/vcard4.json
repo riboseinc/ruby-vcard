@@ -42,8 +42,8 @@
        "honsuffix":["Jr.", "M.D.", "A.C.P."]}},
    "NICKNAME":{"value":["Boss"], "params":{"TYPE":["WORK"]}},
    "NOTE":
-    {"value":"This fax number is operational 0800 to 1715 EST\\, Mon-Fri"},
-   "ORG":{"value":["ABC\\, Inc.", "North American Division", "Marketing"]},
+    {"value":"This fax number is operational 0800 to 1715 EST, Mon-Fri"},
+   "ORG":{"value":["ABC, Inc.", "North American Division", "Marketing"]},
    "PHOTO":{"value":"http://www.example.com/pub/photos/jqpublic.gif"},
    "RELATED":
     {"value":"urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",

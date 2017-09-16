@@ -156,10 +156,10 @@ module Vcard::V3_0
                 h
             } 
      date_time	= seq(date, 'T', time) {|d, _, t|
-                	d = d.merge t
-			res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
-			res[:secfrac] = h[:secfrac] if h[:secfrac]
-			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
+                	#d = d.merge t
+			#res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
+			#res[:secfrac] = h[:secfrac] if h[:secfrac]
+			Vcard::V3_0::PropertyValue::DateTimeLocal.new(d.merge t)
 	     	}
      date_time.eof
   end
@@ -184,13 +184,13 @@ module Vcard::V3_0
                 h
             } 
      date_or_date_time	= seq(date, 'T', time) {|d, _, t|
-                	d = d.merge t
-			res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
-			res[:secfrac] = d[:secfrac] if d[:secfrac]
-			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
+                	#d = d.merge t
+			#res = {:time => Time.local(d[:year], d[:month], d[:day], d[:hour], d[:min], d[:sec]), :zone => d[:zone]}
+			#res[:secfrac] = d[:secfrac] if d[:secfrac]
+			Vcard::V3_0::PropertyValue::DateTimeLocal.new(d.merge t)
 	     	} | date.map {|d|
-			res = {:time => Time.local(d[:year], d[:month], d[:day], 0, 0, 0), :zone => d[:zone]}
-			Vcard::V3_0::PropertyValue::DateTimeLocal.new(res)
+			#res = {:time => Time.local(d[:year], d[:month], d[:day], 0, 0, 0), :zone => d[:zone]}
+		    	Vcard::V3_0::PropertyValue::Date.new(d)
 		}
      date_or_date_time.eof
   end
@@ -215,8 +215,8 @@ module Vcard::V3_0
     text	= C::TEXT3
     component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
-	    		[a, b].flatten
-		} | text.map {|t| [t] }
+	    		[unescape(a), b].flatten
+		} | text.map {|t| [unescape(t)] }
     fivepartname1 = seq(component, ';', component, ';', component, ';', 
 		       component, ';', component) {|a, _, b, _, c, _, d, _, e|
 	    		a = a[0] if a.length == 1
@@ -252,8 +252,8 @@ module Vcard::V3_0
     text	= C::TEXT3
     component	=  
 	    	seq(text, ',', lazy{component}) {|a, _, b|
-	    		[a, b].flatten
-		} | text.map {|t| [t] }
+	    		[unescape(a), b].flatten
+		} | text.map {|t| [unescape(t)] }
     address1 = seq(component, ';', component, ';', component, ';', component, ';', 
 		       component, ';', component, ';', component) {|a, _, b, _, c, _, d, _, e, _, f, _, g|
 	    		a = a[0] if a.length == 1
@@ -401,10 +401,10 @@ module Vcard::V3_0
 		value = value.gsub(/\\n/,"\n").gsub(/\\;/,';').gsub(/\\,/,',').gsub(/\\:/,':')
 		value = value.gsub(/BEGIN:VCARD\n/, "BEGIN:VCARD\nVERSION:3.0\n") unless value =~ /\nVERSION:3\.0/
     		ctx1 = Rsec::ParseContext.new value, 'source' 
-		ret = Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1
+		ret = Vcard::V3_0::PropertyValue::Agent.new(Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1)
 	    end
     else
-	    ret = Vcard::V3_0::PropertyValue::Text.new value
+	    ret = Vcard::V3_0::PropertyValue::Text.new unescape(value)
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'

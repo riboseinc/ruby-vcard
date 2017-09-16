@@ -28,7 +28,7 @@
     [{"value":
        {"pobox":"",
         "ext":"",
-        "street":"123 Home St\\nHome City\\, HM 12345",
+        "street":"123 Home St\nHome City, HM 12345",
         "locality":"",
         "region":"",
         "code":"",
@@ -53,4 +53,4 @@
      {"value":"MyCustom", "group":"item6"}],
    "NOTE":
     {"value":
-      "This is GMail's note field.\\nIt should be added as a NOTE type.\\nACustomField: CustomField"}}}
+      "This is GMail's note field.\nIt should be added as a NOTE type.\nACustomField: CustomField"}}}

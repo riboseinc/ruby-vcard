@@ -36,10 +36,10 @@
         "country":"United States of America"},
       "params":{"TYPE":["HOME"]}}],
    "LABEL":
-    [{"value":"100 Waters Edge\\nBaytown\\, LA 30314\\nUnited States of America",
+    [{"value":"100 Waters Edge\nBaytown, LA 30314\nUnited States of America",
       "params":{"TYPE":["WORK","PREF"]}},
      {"value":
-       "42 Plantation St.\\nBaytown\\, LA 30314\\nUnited States of America",
+       "42 Plantation St.\nBaytown, LA 30314\nUnited States of America",
       "params":{"TYPE":["HOME"]}}],
    "EMAIL":{"value":"forrestgump@example.com"},
    "REV":

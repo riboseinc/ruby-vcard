@@ -348,7 +348,11 @@ module PropertyValue
 	val[:hour] = 0 unless val.has_key?(:hour)
 	val[:min] = 0 unless val.has_key?(:min)
 	val[:sec] = 0 unless val.has_key?(:sec)
-	self.value[:time] = ::Time.utc(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
+	if val[:zone].empty?
+		self.value[:time] = ::Time.utc(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
+	else
+		self.value[:time] = ::Time.local(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
+	end
 	if val[:zone] and val[:zone] != 'Z'
 		offset = val[:zone][:hour]*3600 + val[:zone][:min]*60
 		offset += val[:zone][:sec] if val[:zone][:sec]
