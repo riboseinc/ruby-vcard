@@ -157,7 +157,7 @@ module Vcard::V3_0
 private
 
   def unfold(str)
-	         str.gsub(/[\n\r]+[ \t]+/, '')
+	         str.gsub(/[\n\r]+[ \t]/, '')
   end
 
 
