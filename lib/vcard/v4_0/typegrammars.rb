@@ -70,12 +70,12 @@ module Vcard::V4_0
 		    {:year => yy, :month => mm, :day => dd}
 		} | seq(/[0-9]{4}/.r, "-", /[0-9]{2}/.r) {|yy, _, dd|
 			{:year => yy, :day => dd }
-        } | /[0-9]{4}/.r {|yy|
+        	} | /[0-9]{4}/.r {|yy|
 			{:year => yy }
 		} | seq('--', /[0-9]{2}/.r, /[0-9]{2}/.r) {|_, mm, dd|
 		    {:month => mm, :day => dd}
 		} | seq('--', /[0-9]{2}/.r) {|_, mm|
-            {:month => mm}
+                    {:month => mm}
 		} | seq('--', '-', /[0-9]{2}/.r) {|_, _, dd|
 		    {:day => dd}
 		}
@@ -495,7 +495,8 @@ module Vcard::V4_0
 	     end
 	     ret = clientpidmap._parse ctx1
     else
-	    ret = Vcard::V4_0::PropertyValue::Text.new unescape(value)
+	    # left completely open in spec
+	    ret = Vobject::PropertyValue.new value
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'

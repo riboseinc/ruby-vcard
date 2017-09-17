@@ -9,11 +9,11 @@ module PropertyValue
    class << self 
    def escape x
 	  # temporarily escape \\ as \u007f, which is banned from text
-	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/\u007f/, "\\\\\\\\")
+	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/\u007f/, "\\\\")
    end
    def escape_component x
 	  # temporarily escape \\ as \u007f, which is banned from text
-	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/;/, "\\;").gsub(/\u007f/, "\\\\\\\\")
+	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/;/, "\\;").gsub(/\u007f/, "\\\\")
    end
    def listencode x
          if x.kind_of?(Array)
@@ -159,20 +159,30 @@ module PropertyValue
     end
 
     def initialize val
-        self.value = val
+        self.value = val.clone
         self.type = 'date'
 	# fill in unspecified month and year and date; only for purposes of comparison
-	val[:year] = ::Date.today().year unless val.has_key?(:year)
-	val[:month] = ::Date.today().month unless val.has_key?(:month)
-	val[:day] = ::Date.today().day unless val.has_key?(:day)
+	val[:year] = sprintf("%04d", ::Date.today().year) unless val.has_key?(:year)
+	val[:month] = sprintf("%02d",::Date.today().month) unless val.has_key?(:month)
+	val[:day] = sprintf("%02d",::Date.today().day) unless val.has_key?(:day)
 	self.value[:date] = ::Time.utc(val[:year], val[:month], val[:day])
     end
 
     def to_s
 	ret = ""
-	ret << sprintf("%04d", self.value[:year].to_i) if self.value[:year]
-	ret << sprintf("%02d", self.value[:month].to_i) if self.value[:month]
-	ret << sprintf("%02d", self.value[:day].to_i) if self.value[:day]
+	if self.value[:year]
+		ret << self.value[:year] 
+	else
+		ret << "--"
+	end
+	if self.value[:month]
+		ret << self.value[:month] 
+	elsif self.value[:day]
+		ret << "-"
+	end
+	if self.value[:day]
+		ret << self.value[:day] 
+	end
 	ret
     end
 
@@ -193,13 +203,13 @@ module PropertyValue
     end
 
     def initialize val
-        self.value = val
+        self.value = val.clone
 	# val consists of :time and :zone values. If :zone is empty, floating local time (i.e. system local time) is assumed
         self.type = 'datetimeLocal'
 	# fill in unspecified month and year and date; only for purposes of comparison
-	val[:year] = ::Date.today().year unless val.has_key?(:year)
-	val[:month] = ::Date.today().month unless val.has_key?(:month)
-	val[:day] = ::Date.today().day unless val.has_key?(:day)
+	val[:year] = sprintf("%04d",::Date.today().year) unless val.has_key?(:year)
+	val[:month] = sprintf("%02d",::Date.today().month) unless val.has_key?(:month)
+	val[:day] = sprintf("%02d",::Date.today().day) unless val.has_key?(:day)
 	val[:hour] = 0 unless val.has_key?(:hour)
 	val[:min] = 0 unless val.has_key?(:min)
 	val[:sec] = 0 unless val.has_key?(:sec)
@@ -218,19 +228,29 @@ module PropertyValue
 
     def to_s
 	ret = ""
-	ret << sprintf("%04d", self.value[:year].to_i) if self.value[:year]
-	ret << sprintf("%02d", self.value[:month].to_i) if self.value[:month]
-	ret << sprintf("%02d", self.value[:day].to_i) if self.value[:day]
+	if self.value[:year]
+		ret << self.value[:year] 
+	else
+		ret << "--"
+	end
+	if self.value[:month]
+		ret << self.value[:month] 
+	elsif self.value[:day]
+		ret << "-"
+	end
+	if self.value[:day]
+		ret << self.value[:day] 
+	end
 	ret << "T"
-	ret << sprintf("%02d", self.value[:hour].to_i) if self.value[:hour]
-	ret << sprintf("%02d", self.value[:min].to_i) if self.value[:min]
-	ret << sprintf("%02d", self.value[:sec].to_i) if self.value[:sec]
+	ret << self.value[:hour] if self.value[:hour]
+	ret << self.value[:min] if self.value[:min]
+	ret << self.value[:sec] if self.value[:sec]
 	ret << self.value[:zone] if self.value[:zone] == 'Z'
 	if self.value[:zone].kind_of?(Hash)
 		ret << self.value[:zone][:sign]
-		ret << sprintf("%02d", self.value[:zone][:hour].to_i) 
-		ret << sprintf("%02d", self.value[:zone][:min].to_i) 
-		ret << sprintf("%02d", self.value[:zone][:sec].to_i)  if self.value[:zone][:sec]
+		ret << self.value[:zone][:hour]
+		ret << self.value[:zone][:min]
+		ret << self.value[:zone][:sec]  if self.value[:zone][:sec]
 	end
 	ret
     end
@@ -316,7 +336,7 @@ module PropertyValue
 
     def to_s
       ret = self.value[:sex]
-      ret << self.value[:sex] if !self.value[:gender].empty?
+      ret << ";#{self.value[:gender]}" if !self.value[:gender].empty?
       ret
     end
 
@@ -333,7 +353,7 @@ module PropertyValue
     end
 
     def to_s
-      self.value
+      self.value.map{|m| Text.escape m}.join(',')
     end
 
     def to_hash
@@ -368,7 +388,7 @@ module PropertyValue
         def to_s
           ret = Text.listencode self.value[:surname]
           ret += ";#{Text.listencode self.value[:givenname]}" 
-          ret += ";#{Text.listencode self.value[:middlename]}" 
+          ret += ";#{Text.listencode self.value[:additionalname]}" 
           ret += ";#{Text.listencode self.value[:honprefix]}" 
           ret += ";#{Text.listencode self.value[:honsuffix]}" 
           ret

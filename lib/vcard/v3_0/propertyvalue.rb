@@ -9,7 +9,7 @@ module PropertyValue
    class << self 
   def escape x
 	  # temporarily escape \\ as \u007f, which is banned from text
-	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/;/, "\\;").gsub(/\u007f/, "\\\\\\\\")
+	  x.gsub(/\\/, "\u007f").gsub(/\n/, "\\n").gsub(/,/, "\\,").gsub(/;/, "\\;").gsub(/\u007f/, "\\\\")
    end
 
   def listencode x
@@ -197,7 +197,7 @@ module PropertyValue
     end
 
     def initialize val
-        self.value = val
+        self.value = val.clone
 	# val consists of :time and :zone values. If :zone is empty, floating local time (i.e. system local time) is assumed
         self.type = 'datetimeLocal'
 	val[:sec] += (val[:secfrac].to_f / (10 ** val[:secfrac].length)) if !val[:secfrac].nil? and !val[:secfrac].empty?
@@ -206,16 +206,17 @@ module PropertyValue
 	else
 		self.value[:time] = ::Time.utc(val[:year], val[:month], val[:day], val[:hour], val[:min], val[:sec])
 	end
+	self.value[:origtime] = self.value[:time]
 	if val[:zone] and val[:zone] != 'Z'
-            offset = val[:zone][:hour]*3600 + val[:zone][:min]*60
-            offset += val[:zone][:sec] if val[:zone][:sec]
+            offset = val[:zone][:hour].to_i*3600 + val[:zone][:min].to_i*60
+            offset += val[:zone][:sec].to_i if val[:zone][:sec]
             offset = -offset if val[:sign] == '-'
             self.value[:time] += offset.to_i
         end
     end
 
     def to_s
-	localtime = self.value[:time]
+	localtime = self.value[:origtime]
 	ret = sprintf("%04d-%02d-%02dT%02d:%02d:%02d", localtime.year, localtime.month, localtime.day,
 	       localtime.hour, localtime.min, localtime.sec)
 	ret = ret + ",.#{self.value[:secfrac]}" if self.value[:secfrac]
@@ -272,7 +273,7 @@ module PropertyValue
     end
 
     def to_s
-	    ret = "#{self.value[:sign]}#{self.value[:hr]}#{self.value[:min]}"
+	    ret = "#{self.value[:sign]}#{self.value[:hour]}:#{self.value[:min]}"
 	    #ret += self.value[:sec] if self.value[:sec]
 	    ret
     end
@@ -342,10 +343,10 @@ module PropertyValue
 
     def to_s
       ret = Text.listencode self.value[:surname]
-      ret += ";#{Text.listencode self.value[:givenname]}" if self.value[:givenname]
-      ret += ";#{Text.listencode self.value[:middlename]}" if self.value[:middlename]
-      ret += ";#{Text.listencode self.value[:honprefix]}" if self.value[:honprefix]
-      ret += ";#{Text.listencode self.value[:honsuffix]}" if self.value[:honsuffix]
+      ret += ";#{Text.listencode self.value[:givenname]}" if !self.value[:givenname].empty? or !self.value[:middlename].empty? or !self.value[:honprefix].empty? or !self.value[:honsuffix].empty?
+      ret += ";#{Text.listencode self.value[:middlename]}" if !self.value[:middlename].empty? or !self.value[:honprefix].empty?
+      ret += ";#{Text.listencode self.value[:honprefix]}" if !self.value[:honprefix].empty? or !self.value[:honsuffix].empty?
+      ret += ";#{Text.listencode self.value[:honsuffix]}" if !self.value[:honsuffix].empty?
       ret
     end
 
@@ -363,12 +364,12 @@ module PropertyValue
 
     def to_s
       ret = Text.listencode self.value[:pobox]
-      ret += ";#{Text.listencode self.value[:ext]}" 
-      ret += ";#{Text.listencode self.value[:street]}" 
-      ret += ";#{Text.listencode self.value[:locality]}" 
-      ret += ";#{Text.listencode self.value[:region]}"
-      ret += ";#{Text.listencode self.value[:code]}"
-      ret += ";#{Text.listencode self.value[:country]}"
+      ret += ";#{Text.listencode self.value[:ext]}" if !self.value[:ext].empty? or !self.value[:street].empty? or !self.value[:locality].empty? or !self.value[:region].empty? or !self.value[:code].empty? or !self.value[:country].empty?
+      ret += ";#{Text.listencode self.value[:street]}" if !self.value[:street].empty? or !self.value[:locality].empty? or !self.value[:region].empty? or !self.value[:code].empty? or !self.value[:country].empty?
+      ret += ";#{Text.listencode self.value[:locality]}" if !self.value[:locality].empty? or !self.value[:region].empty? or !self.value[:code].empty? or !self.value[:country].empty?
+      ret += ";#{Text.listencode self.value[:region]}" if !self.value[:region].empty? or !self.value[:code].empty? or !self.value[:country].empty?
+      ret += ";#{Text.listencode self.value[:code]}" if !self.value[:code].empty? or !self.value[:country].empty?
+      ret += ";#{Text.listencode self.value[:country]}" if !self.value[:country].empty?
       ret
     end
 
@@ -396,6 +397,7 @@ module PropertyValue
 
   class Agent < Vobject::PropertyValue
     def initialize val
+	val[:VCARD].delete(:VERSION)
         self.value = val
         self.type = 'agent'
     end
@@ -415,8 +417,10 @@ module PropertyValue
     end
 
     def to_s
-	ret = Vobject::Component.new(:AGENT, self.value[:AGENT]).to_s
-	ret.gsub(/\n/,"\\n")
+	ret = Vobject::Component.new(:VCARD, self.value[:VCARD]).to_s
+	# spec says that colons must be expected, but none of the examples do
+	ret.gsub(/\n/,"\\n").gsub(/,/,"\\,").gsub(/;/,"\\;")
+	#ret.gsub(/\n/,"\\n").gsub(/:/,"\\:")
     end
 
   end

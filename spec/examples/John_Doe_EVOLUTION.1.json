@@ -38,7 +38,7 @@
        "locality":"Albaney",
        "region":"New York",
        "code":"12345",
-       "country":"UnitedStates of America"},
+       "country":"United States of America"},
      "params":{"TYPE":["HOME"]}},
    "BDAY":{"value":{"year":"1980", "month":"03", "day":"22"}},
    "X_EVOLUTION_ANNIVERSARY":{"value":"1980-03-22"},

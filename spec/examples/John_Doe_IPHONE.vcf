@@ -18,7 +18,7 @@ item2.X-ABLabel:_$!<AssistantPhone>!$_
 item3.ADR;type=HOME;type=pref:;;Silicon Alley 5,;New York;New York;12345;United States of America
 item3.X-ABADR:Silicon Alley
 item4.ADR;type=WORK:;;Street4\nBuilding 6\nFloor 8;New York;;12345;USA
-item4.X-ABADR:Street 4, Building 6,\n Floor 8\nNew York\nUSA
+item4.X-ABADR:Street 4\, Building 6\,\n Floor 8\nNew York\nUSA
 item5.URL:http://www.ibm.com
 item5.X-ABLabel:_$!<HomePage>!$_
 BDAY;value=date:2012-06-06

@@ -27,7 +27,7 @@
     {"value":
       {"pobox":"",
        "ext":"",
-       "street":"123 MainStreet",
+       "street":"123 Main Street",
        "locality":"Any Town",
        "region":"CA",
        "code":"91921-1234",
@@ -62,7 +62,7 @@
       "params":{"VALUE":"uri"}},
      {"value":
        {"VCARD":
-         {"VERSION":{"value":"3.0"},
+         {
           "N":
            {"value":
              {"surname":"Thomas",
@@ -79,7 +79,7 @@
     [{"value":["TRAVEL AGENT"]},
      {"value":["INTERNET", "IETF", "INDUSTRY", "INFORMATION TECHNOLOGY"]}],
    "NOTE":
-    {"value":"This fax number is operational 0800 to 1715EST, Mon-Fri."},
+    {"value":"This fax number is operational 0800 to 1715 EST, Mon-Fri."},
    "PRODID":{"value":"-//ONLINE DIRECTORY//NONSGML Version 1//EN"},
    "REV":
     {"value":

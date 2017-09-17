@@ -399,12 +399,14 @@ module Vcard::V3_0
 	    else
 		# unescape
 		value = value.gsub(/\\n/,"\n").gsub(/\\;/,';').gsub(/\\,/,',').gsub(/\\:/,':')
+		# spec says that colons need to be escaped, but none of the examples do so
+		#value = value.gsub(/\\:/,':')
 		value = value.gsub(/BEGIN:VCARD\n/, "BEGIN:VCARD\nVERSION:3.0\n") unless value =~ /\nVERSION:3\.0/
     		ctx1 = Rsec::ParseContext.new value, 'source' 
 		ret = Vcard::V3_0::PropertyValue::Agent.new(Vcard::V3_0::Grammar.vobjectGrammar._parse ctx1)
 	    end
     else
-	    ret = Vcard::V3_0::PropertyValue::Text.new unescape(value)
+	    ret = textT._parse ctx1
     end
     if ret.kind_of?(Hash) and ret[:error]
         raise ctx1.report_error "#{ret[:error]} for property #{key}, value #{value}", 'source'
