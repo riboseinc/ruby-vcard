@@ -1,3 +1,6 @@
+
+**NOTE: This gem has been superseded by https://github.com/riboseinc/ruby-vobject , which incorporates both Vcards and Vcalendars. It is no longer being maintained.**
+
 = Ruby vObject vCard gem
 
 This is a pure Ruby library for decoding and encoding vCards using the
